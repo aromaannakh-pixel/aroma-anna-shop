@@ -1,0 +1,266 @@
+---
+import { getDictionary, localizedPath, type Locale } from '@/i18n/config';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const dict = getDictionary(lang);
+const h = dict.home;
+---
+
+<section class="hero">
+  <div class="hero-banner">
+    <img src="/hero-banner.jpg" alt="" loading="eager" />
+    <div class="hero-scrim" aria-hidden="true"></div>
+
+    <div class="hero-overlay container">
+      <span class="eyebrow">{h.eyebrow}</span>
+      <h1>
+        <span class="brand-script">AromaAnna</span>
+        <span class="brand-tagline">Aesthetic Aromatherapy</span>
+      </h1>
+      <p>{h.heroSubtitle}</p>
+      <div class="hero-actions">
+        <a class="btn" href={localizedPath(lang, '/catalog')}>{h.shopNow}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    background: var(--color-bg);
+  }
+
+  .hero-banner {
+    position: relative;
+    overflow: hidden;
+    min-height: 640px;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+  }
+
+  .hero-banner img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    animation: hero-kenburns 22s ease-in-out infinite alternate;
+  }
+
+  @keyframes hero-kenburns {
+    0% {
+      transform: scale(1) translate(0, 0);
+    }
+    100% {
+      transform: scale(1.08) translate(-1%, -1%);
+    }
+  }
+
+  .hero-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      rgba(22, 17, 10, 0.68) 0%,
+      rgba(22, 17, 10, 0.48) 38%,
+      rgba(22, 17, 10, 0.22) 62%,
+      rgba(22, 17, 10, 0.05) 82%,
+      rgba(22, 17, 10, 0) 94%
+    );
+  }
+
+  .hero-overlay {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 640px;
+  }
+
+  .eyebrow,
+  .hero-overlay h1,
+  .hero-overlay p,
+  .hero-actions {
+    opacity: 0;
+    animation: hero-fade-up 0.9s ease forwards;
+  }
+
+  .eyebrow {
+    animation-delay: 0.1s;
+  }
+
+  .hero-overlay h1 {
+    animation-delay: 0.28s;
+  }
+
+  .hero-overlay p {
+    animation-delay: 0.46s;
+  }
+
+  .hero-actions {
+    animation-delay: 0.64s;
+  }
+
+  @keyframes hero-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.92);
+    margin-bottom: 16px;
+    max-width: 420px;
+  }
+
+  .eyebrow::before {
+    content: '';
+    width: 20px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.6);
+  }
+
+  .hero-overlay h1 {
+    margin: 0 0 18px;
+    max-width: 460px;
+  }
+
+  .brand-script {
+    display: block;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 46px;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    color: #fff;
+  }
+
+  .brand-tagline {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-body);
+    text-transform: uppercase;
+    letter-spacing: 0.24em;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.85);
+    margin-top: 12px;
+  }
+
+  .brand-tagline::before,
+  .brand-tagline::after {
+    content: '';
+    width: 14px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  .hero-overlay p {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 19px;
+    line-height: 1.55;
+    max-width: 420px;
+    margin-bottom: 26px;
+  }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .hero-actions .btn {
+    color: #fff;
+  }
+
+  .hero-actions .btn::after {
+    background: #fff;
+  }
+
+  .hero-actions .btn:hover {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-banner img {
+      animation: none;
+    }
+
+    .eyebrow,
+    .hero-overlay h1,
+    .hero-overlay p,
+    .hero-actions {
+      opacity: 1;
+      animation: none;
+      transform: none;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .hero-banner,
+    .hero-overlay {
+      min-height: 620px;
+    }
+
+    .hero-scrim {
+      background: linear-gradient(
+        180deg,
+        rgba(22, 17, 10, 0.05) 0%,
+        rgba(22, 17, 10, 0.42) 48%,
+        rgba(22, 17, 10, 0.58) 72%
+      );
+    }
+
+    .hero-overlay {
+      justify-content: flex-end;
+      text-align: center;
+      padding-bottom: 40px;
+    }
+
+    .eyebrow {
+      justify-content: center;
+      max-width: none;
+    }
+
+    .hero-overlay h1 {
+      max-width: none;
+    }
+
+    .brand-script {
+      font-size: 34px;
+    }
+
+    .hero-overlay p {
+      font-size: 16px;
+      max-width: none;
+      margin-inline: auto;
+    }
+
+    .hero-actions {
+      justify-content: center;
+    }
+  }
+</style>

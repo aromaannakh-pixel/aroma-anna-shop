@@ -1,0 +1,16 @@
+# build
+dist/
+.astro/
+
+# deps
+node_modules/
+
+# env
+.env
+.env.local
+
+# system
+.DS_Store
+
+# Local Netlify folder
+.netlify

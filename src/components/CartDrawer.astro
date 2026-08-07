@@ -1,0 +1,293 @@
+---
+import { getDictionary, localizedPath, type Locale } from '@/i18n/config';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const dict = getDictionary(lang);
+---
+
+<div
+  id="cart-drawer"
+  class="cart-drawer"
+  aria-hidden="true"
+  data-lang={lang}
+  data-empty-text={dict.common.emptyCart}
+  data-remove-text={dict.common.remove}
+>
+  <div id="cart-backdrop" class="cart-backdrop"></div>
+  <aside class="cart-panel" role="dialog" aria-label={dict.nav.cart}>
+    <div class="cart-header">
+      <h2>{dict.nav.cart}</h2>
+      <button id="cart-close" class="cart-close" type="button" aria-label="Close">✕</button>
+    </div>
+
+    <div id="cart-items" class="cart-items"></div>
+
+    <div class="cart-footer">
+      <div class="cart-total-row">
+        <span>{dict.common.total}</span>
+        <span id="cart-total-amount">—</span>
+      </div>
+      <a id="cart-checkout-link" href={localizedPath(lang, '/checkout')} class="btn checkout-btn">
+        {dict.common.checkout}
+      </a>
+    </div>
+  </aside>
+</div>
+
+<style>
+  .cart-drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .cart-drawer.open {
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .cart-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 15, 10, 0.4);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .cart-drawer.open .cart-backdrop {
+    opacity: 1;
+  }
+
+  .cart-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: min(400px, 100vw);
+    background: var(--color-bg);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .cart-drawer.open .cart-panel {
+    transform: translateX(0);
+  }
+
+  .cart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .cart-header h2 {
+    margin: 0;
+    font-size: 18px;
+  }
+
+  .cart-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: var(--color-text-muted);
+    padding: 4px;
+  }
+
+  .cart-items {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 20px;
+  }
+
+  .cart-empty {
+    color: var(--color-text-muted);
+    text-align: center;
+    padding-block: 40px;
+  }
+
+  .cart-item {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    gap: 12px;
+    padding-block: 14px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .cart-item-thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--color-accent-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+
+  .cart-item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .cart-item-name {
+    font-size: 14px;
+    margin: 0 0 6px;
+  }
+
+  .cart-item-qty {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .qty-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+  }
+
+  .cart-item-qty span {
+    min-width: 20px;
+    text-align: center;
+    font-size: 14px;
+  }
+
+  .cart-item-price {
+    text-align: right;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  .cart-item-remove {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 12px;
+    text-decoration: underline;
+    padding: 0;
+  }
+
+  .cart-footer {
+    padding: 16px 20px 20px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .cart-total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+
+  .checkout-btn {
+    width: 100%;
+  }
+</style>
+
+<script>
+  import { getCart, updateQuantity, removeFromCart, getCartTotal, CART_UPDATED_EVENT, type CartItem } from '@/lib/cart';
+  import { formatPrice } from '@/lib/format';
+  import type { Locale } from '@/i18n/config';
+
+  const drawer = document.getElementById('cart-drawer');
+  const backdrop = document.getElementById('cart-backdrop');
+  const closeBtn = document.getElementById('cart-close');
+  const toggleBtn = document.getElementById('cart-toggle');
+  const itemsEl = document.getElementById('cart-items');
+  const totalEl = document.getElementById('cart-total-amount');
+
+  if (drawer && itemsEl && totalEl) {
+    const lang = (drawer.dataset.lang as Locale) || 'ua';
+    const emptyText = drawer.dataset.emptyText || '';
+    const removeText = drawer.dataset.removeText || '';
+
+    function render() {
+      const items = getCart();
+
+      if (items.length === 0) {
+        itemsEl!.innerHTML = `<p class="cart-empty">${emptyText}</p>`;
+      } else {
+        itemsEl!.innerHTML = '';
+        items.forEach((item: CartItem) => {
+          const name = lang === 'ua' ? item.nameUa : item.nameRu;
+          const row = document.createElement('div');
+          row.className = 'cart-item';
+          row.innerHTML = `
+            <div class="cart-item-thumb">${item.image ? `<img src="${item.image}" alt="">` : '🌿'}</div>
+            <div>
+              <p class="cart-item-name">${name}</p>
+              <div class="cart-item-qty">
+                <button type="button" class="qty-btn" data-action="dec">−</button>
+                <span>${item.quantity}</span>
+                <button type="button" class="qty-btn" data-action="inc">+</button>
+              </div>
+            </div>
+            <div class="cart-item-price">
+              <span>${formatPrice(item.unitPrice * item.quantity, lang)}</span>
+              <button type="button" class="cart-item-remove">${removeText}</button>
+            </div>
+          `;
+
+          row.querySelector('[data-action="dec"]')?.addEventListener('click', () => {
+            updateQuantity(item.productId, item.quantity - 1);
+          });
+          row.querySelector('[data-action="inc"]')?.addEventListener('click', () => {
+            updateQuantity(item.productId, item.quantity + 1);
+          });
+          row.querySelector('.cart-item-remove')?.addEventListener('click', () => {
+            removeFromCart(item.productId);
+          });
+
+          itemsEl!.appendChild(row);
+        });
+      }
+
+      totalEl!.textContent = formatPrice(getCartTotal(), lang);
+    }
+
+    function open() {
+      drawer!.classList.add('open');
+      drawer!.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      render();
+    }
+
+    function close() {
+      drawer!.classList.remove('open');
+      drawer!.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    toggleBtn?.addEventListener('click', open);
+    closeBtn?.addEventListener('click', close);
+    backdrop?.addEventListener('click', close);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') close();
+    });
+    window.addEventListener(CART_UPDATED_EVENT, render);
+
+    render();
+  }
+</script>

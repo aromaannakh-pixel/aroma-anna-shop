@@ -1,0 +1,132 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getDictionary, localizedPath, type Locale } from '@/i18n/config';
+import { fetchPublishedPosts } from '@/lib/blog';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const dict = getDictionary(lang);
+const b = dict.blog;
+const posts = await fetchPublishedPosts();
+---
+
+<BaseLayout lang={lang} path="/blog" title={b.title}>
+  <section class="container blog-list">
+    <h1>{b.title}</h1>
+
+    {
+      posts.length === 0 ? (
+        <p class="empty">{b.noPosts}</p>
+      ) : (
+        <div class="posts-grid">
+          {posts.map((post) => {
+            const title = lang === 'ua' ? post.title_ua : post.title_ru;
+            const excerpt = lang === 'ua' ? post.excerpt_ua : post.excerpt_ru;
+            const date = new Date(post.published_at ?? post.created_at).toLocaleDateString(
+              lang === 'ua' ? 'uk-UA' : 'en-US'
+            );
+            return (
+              <a class="post-card" href={localizedPath(lang, `/blog/${post.slug}`)}>
+                <div class="post-thumb">
+                  {post.cover_image ? <img src={post.cover_image} alt={title} loading="lazy" /> : <span aria-hidden="true">📝</span>}
+                </div>
+                <div class="post-body">
+                  <p class="post-date">{date}</p>
+                  <h2>{title}</h2>
+                  {excerpt && <p class="post-excerpt">{excerpt}</p>}
+                  <span class="read-more">{dict.common.readMore} →</span>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      )
+    }
+  </section>
+</BaseLayout>
+
+<style>
+  .blog-list {
+    padding-block: 40px 80px;
+  }
+
+  .blog-list h1 {
+    margin-bottom: 24px;
+  }
+
+  .empty {
+    color: var(--color-text-muted);
+    padding-block: 40px;
+    text-align: center;
+  }
+
+  .posts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+  }
+
+  .post-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    color: var(--color-text);
+  }
+
+  .post-card:hover {
+    text-decoration: none;
+    box-shadow: 0 6px 18px rgba(43, 36, 32, 0.08);
+  }
+
+  .post-thumb {
+    aspect-ratio: 16 / 9;
+    background: var(--color-accent-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+  }
+
+  .post-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .post-body {
+    padding: 16px;
+  }
+
+  .post-date {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin: 0 0 6px;
+  }
+
+  .post-body h2 {
+    font-size: 17px;
+    margin: 0 0 8px;
+  }
+
+  .post-excerpt {
+    font-size: 14px;
+    color: var(--color-text-muted);
+    margin: 0 0 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .read-more {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-accent-dark);
+  }
+</style>

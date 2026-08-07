@@ -1,0 +1,54 @@
+---
+import { getDictionary, localizedPath, type Locale } from '@/i18n/config';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const dict = getDictionary(lang);
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container footer-row">
+    <span>{dict.siteName} · © {year}. {dict.footer.rights}.</span>
+    <nav class="footer-links" aria-label={dict.footer.contacts}>
+      <a href={localizedPath(lang, '/contacts')}>{dict.footer.contacts}</a>
+      <a href={localizedPath(lang, '/oferta')}>{dict.footer.oferta}</a>
+      <a href={localizedPath(lang, '/privacy')}>{dict.footer.privacy}</a>
+      <a href={localizedPath(lang, '/returns')}>{dict.footer.returns}</a>
+    </nav>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--color-border);
+    margin-top: 60px;
+    padding-block: 24px;
+    color: var(--color-text-muted);
+    font-size: 14px;
+  }
+
+  .footer-row {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+  }
+
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+  }
+
+  .footer-links a {
+    color: var(--color-text-muted);
+  }
+
+  .footer-links a:hover {
+    color: var(--color-accent-dark);
+  }
+</style>

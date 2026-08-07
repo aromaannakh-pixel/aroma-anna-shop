@@ -1,0 +1,70 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { type Locale } from '@/i18n/config';
+import { legalContent, type LegalDoc } from '@/content/legal';
+
+interface Props {
+  lang: Locale;
+  doc: 'oferta' | 'privacy' | 'returns' | 'contacts';
+  path: string;
+}
+
+const { lang, doc, path } = Astro.props;
+const content: LegalDoc = legalContent[lang][doc];
+---
+
+<BaseLayout lang={lang} path={path} title={content.title}>
+  <article class="container legal">
+    <h1>{content.title}</h1>
+    <p class="updated">{content.updated}</p>
+
+    {content.intro && <p class="intro">{content.intro}</p>}
+
+    {content.sections.map((section) => (
+      <section class="legal-section">
+        <h2>{section.heading}</h2>
+        {section.paragraphs.map((p) => (
+          <p>{p}</p>
+        ))}
+      </section>
+    ))}
+  </article>
+</BaseLayout>
+
+<style>
+  .legal {
+    padding-block: 40px 80px;
+    max-width: 720px;
+  }
+
+  .legal h1 {
+    margin-bottom: 8px;
+  }
+
+  .updated {
+    color: var(--color-text-muted);
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+
+  .intro {
+    color: var(--color-text-muted);
+    line-height: 1.7;
+    margin-bottom: 32px;
+  }
+
+  .legal-section {
+    margin-bottom: 28px;
+  }
+
+  .legal-section h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+
+  .legal-section p {
+    line-height: 1.75;
+    margin-bottom: 10px;
+    color: var(--color-text);
+  }
+</style>

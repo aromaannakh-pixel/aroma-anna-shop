@@ -1,0 +1,20 @@
+---
+import BlogPostPage from '@/components/BlogPostPage.astro';
+import { fetchPublishedPosts, type BlogPostRow } from '@/lib/blog';
+
+interface Props {
+  post: BlogPostRow;
+}
+
+export async function getStaticPaths() {
+  const posts = await fetchPublishedPosts();
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+---
+
+<BlogPostPage lang="ua" post={post} />

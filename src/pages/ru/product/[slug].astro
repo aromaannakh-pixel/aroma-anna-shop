@@ -1,0 +1,20 @@
+---
+import ProductPage from '@/components/ProductPage.astro';
+import { fetchCatalogData, type ProductView } from '@/lib/catalog';
+
+interface Props {
+  product: ProductView;
+}
+
+export async function getStaticPaths() {
+  const { products } = await fetchCatalogData();
+  return products.map((product) => ({
+    params: { slug: product.slug },
+    props: { product },
+  }));
+}
+
+const { product } = Astro.props;
+---
+
+<ProductPage lang="ru" product={product} />

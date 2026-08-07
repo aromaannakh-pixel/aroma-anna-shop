@@ -1,0 +1,23 @@
+---
+// Тимчасова заглушка для сторінок, які ще не реалізовані (каталог/блог/кабінет
+// з'являться в наступних кроках). Тримає навігацію робочою вже зараз.
+interface Props {
+  title: string;
+  note: string;
+}
+
+const { title, note } = Astro.props;
+---
+
+<section class="container coming-soon">
+  <h1>{title}</h1>
+  <p>{note}</p>
+</section>
+
+<style>
+  .coming-soon {
+    padding-block: 80px;
+    text-align: center;
+    color: var(--color-text-muted);
+  }
+</style>

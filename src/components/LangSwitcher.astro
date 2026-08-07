@@ -1,0 +1,75 @@
+---
+import { locales, localizedPath, type Locale } from '@/i18n/config';
+
+interface Props {
+  lang: Locale;
+  /** мовно-нейтральний шлях поточної сторінки, напр. '/catalog' */
+  path: string;
+}
+
+const { lang, path } = Astro.props;
+const labels: Record<Locale, string> = { ua: 'UA', ru: 'RU' };
+---
+
+<div class="lang-switcher">
+  {
+    locales.map((l, i) => (
+      <>
+        {i > 0 && <span class="lang-divider" aria-hidden="true">/</span>}
+        <a
+          href={localizedPath(l, path)}
+          class:list={['lang-link', { active: l === lang }]}
+          aria-current={l === lang ? 'page' : undefined}
+        >
+          {labels[l]}
+        </a>
+      </>
+    ))
+  }
+</div>
+
+<style>
+  .lang-switcher {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .lang-divider {
+    color: var(--color-border);
+    font-size: 13px;
+  }
+
+  .lang-link {
+    padding-bottom: 2px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+    position: relative;
+  }
+
+  .lang-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 100%;
+    bottom: 0;
+    height: 1px;
+    background: var(--color-accent-dark);
+    transition: right 0.2s ease;
+  }
+
+  .lang-link:hover {
+    text-decoration: none;
+    color: var(--color-text);
+  }
+
+  .lang-link.active {
+    color: var(--color-accent-dark);
+  }
+
+  .lang-link.active::after {
+    right: 0;
+  }
+</style>

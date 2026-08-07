@@ -1,0 +1,577 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getDictionary, type Locale } from '@/i18n/config';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const dict = getDictionary(lang);
+const a = dict.account;
+---
+
+<BaseLayout lang={lang} path="/account" title={a.title}>
+  <section
+    class="container account"
+    id="account-root"
+    data-lang={lang}
+    data-err-invalid={a.errorInvalidCredentials}
+    data-err-user-exists={a.errorUserExists}
+    data-err-generic={a.errorGeneric}
+  >
+    <h1>{a.title}</h1>
+
+    <div id="account-loading" class="loading">{a.loadingText}</div>
+
+    <div id="account-auth" class="auth-block" hidden>
+      <div class="tabs">
+        <button type="button" class="tab-btn active" data-tab="login">{a.loginTab}</button>
+        <button type="button" class="tab-btn" data-tab="signup">{a.signupTab}</button>
+      </div>
+
+      <form id="login-form" class="auth-form">
+        <label>
+          {a.emailLabel}
+          <input type="email" name="email" required />
+        </label>
+        <label>
+          {a.passwordLabel}
+          <input type="password" name="password" required minlength="6" />
+        </label>
+        <p class="auth-error" data-for="login" hidden></p>
+        <button type="submit" class="btn">{a.loginButton}</button>
+      </form>
+
+      <form id="signup-form" class="auth-form" hidden>
+        <label>
+          {a.fullNameLabel}
+          <input type="text" name="fullName" required />
+        </label>
+        <label>
+          {a.emailLabel}
+          <input type="email" name="email" required />
+        </label>
+        <label>
+          {a.passwordLabel}
+          <input type="password" name="password" required minlength="6" />
+        </label>
+        <p class="auth-error" data-for="signup" hidden></p>
+        <p class="auth-info" id="signup-confirm-message" hidden>{a.confirmEmailMessage}</p>
+        <button type="submit" class="btn">{a.signupButton}</button>
+      </form>
+
+      <div class="auth-divider"><span>{a.orDivider}</span></div>
+
+      <button type="button" id="google-btn" class="btn btn-outline google-btn">
+        {a.googleButton}
+      </button>
+    </div>
+
+    <div id="account-dashboard" class="dashboard" hidden>
+      <div class="greeting-row">
+        <p id="account-greeting" class="greeting" data-template={a.greeting}></p>
+        <button type="button" id="logout-btn" class="btn logout-btn">{a.logoutButton}</button>
+      </div>
+
+      <div
+        class="orders-section"
+        id="orders-section"
+        data-no-orders-text={a.noOrders}
+        data-order-number-template={a.orderNumber}
+        data-status-new={a.statusNew}
+        data-status-confirmed={a.statusConfirmed}
+        data-status-shipped={a.statusShipped}
+        data-status-completed={a.statusCompleted}
+        data-status-cancelled={a.statusCancelled}
+      >
+        <h2>{a.myOrders}</h2>
+        <div id="orders-list" class="orders-list">
+          <p class="orders-placeholder">{a.loadingText}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style is:global>
+  /* is:global — картки замовлень генеруються в браузері через innerHTML,
+     тому Astro-скоуповані стилі до них не застосовуються. */
+  .account {
+    padding-block: 40px 80px;
+  }
+
+  .auth-block {
+    max-width: 420px;
+  }
+
+  .account h1 {
+    margin-bottom: 24px;
+  }
+
+  .loading {
+    color: var(--color-text-muted);
+  }
+
+  .tabs {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    padding: 0 0 10px;
+    color: var(--color-text-muted);
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 600;
+    position: relative;
+  }
+
+  .tab-btn::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 100%;
+    bottom: -1px;
+    height: 1px;
+    background: var(--color-accent-dark);
+    transition: right 0.2s ease;
+  }
+
+  .tab-btn:hover {
+    color: var(--color-text);
+  }
+
+  .tab-btn.active {
+    color: var(--color-accent-dark);
+  }
+
+  .tab-btn.active::after {
+    right: 0;
+  }
+
+  .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .auth-form[hidden] {
+    display: none;
+  }
+
+  .auth-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
+  .auth-form input {
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+    font-size: 15px;
+  }
+
+  .auth-error {
+    background: #fbe7e7;
+    color: var(--color-sale);
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    font-size: 13px;
+  }
+
+  .auth-info {
+    background: #eaf3ea;
+    color: #2f6b2f;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    font-size: 13px;
+  }
+
+  .auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-block: 20px;
+    color: var(--color-text-muted);
+    font-size: 13px;
+  }
+
+  .auth-divider::before,
+  .auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+  }
+
+  .google-btn {
+    width: 100%;
+  }
+
+  .dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .dashboard[hidden] {
+    display: none;
+  }
+
+  .greeting-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 8px;
+  }
+
+  .greeting {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .logout-btn {
+    flex-shrink: 0;
+  }
+
+  .orders-section {
+    margin-top: 28px;
+    width: 100%;
+  }
+
+  .orders-section h2 {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 16px;
+  }
+
+  .orders-placeholder {
+    color: var(--color-text-muted);
+    font-size: 14px;
+  }
+
+  .orders-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    align-items: start;
+  }
+
+  .order-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+
+  .order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+
+  .order-number {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 16px;
+  }
+
+  .order-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+  }
+
+  .order-status::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-text-muted);
+  }
+
+  .order-status.status-new {
+    color: #8a5a00;
+  }
+  .order-status.status-new::before {
+    background: #d99b00;
+  }
+
+  .order-status.status-completed {
+    color: var(--color-accent-dark);
+  }
+  .order-status.status-completed::before {
+    background: var(--color-accent);
+  }
+
+  .order-status.status-cancelled {
+    color: var(--color-sale);
+  }
+  .order-status.status-cancelled::before {
+    background: var(--color-sale);
+  }
+
+  .order-date {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-bottom: 12px;
+  }
+
+  .order-items {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .order-item-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .item-thumb {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--color-accent-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .item-thumb-placeholder {
+    font-size: 11px;
+  }
+
+  .item-name {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .item-price {
+    flex-shrink: 0;
+  }
+
+  .order-total {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    font-size: 14px;
+    padding-top: 10px;
+    border-top: 1px solid var(--color-border);
+  }
+</style>
+
+<script>
+  import { supabase } from '@/lib/supabase';
+  import { fetchMyOrders } from '@/lib/orders';
+  import { formatPrice } from '@/lib/format';
+  import type { Locale } from '@/i18n/config';
+
+  const rootEl = document.getElementById('account-root');
+  const lang = (rootEl?.dataset.lang as Locale) || 'ua';
+  const errInvalidText = rootEl?.dataset.errInvalid || '';
+  const errUserExistsText = rootEl?.dataset.errUserExists || '';
+  const errGenericText = rootEl?.dataset.errGeneric || '';
+
+  const ordersSectionEl = document.getElementById('orders-section');
+  const ordersListEl = document.getElementById('orders-list');
+  const statusLabels: Record<string, string> = {
+    new: ordersSectionEl?.dataset.statusNew || 'new',
+    confirmed: ordersSectionEl?.dataset.statusConfirmed || 'confirmed',
+    shipped: ordersSectionEl?.dataset.statusShipped || 'shipped',
+    completed: ordersSectionEl?.dataset.statusCompleted || 'completed',
+    cancelled: ordersSectionEl?.dataset.statusCancelled || 'cancelled',
+  };
+  const noOrdersText = ordersSectionEl?.dataset.noOrdersText || '';
+  const orderNumberTemplate = ordersSectionEl?.dataset.orderNumberTemplate || '№{n}';
+  let ordersLoaded = false;
+
+  async function loadOrders() {
+    if (ordersLoaded || !ordersListEl) return;
+    ordersLoaded = true;
+
+    const orders = await fetchMyOrders();
+
+    if (orders.length === 0) {
+      ordersListEl.innerHTML = `<p class="orders-placeholder">${noOrdersText}</p>`;
+      return;
+    }
+
+    ordersListEl.innerHTML = orders
+      .map((order) => {
+        const date = new Date(order.created_at).toLocaleDateString(lang === 'ua' ? 'uk-UA' : 'en-US');
+        const itemsHtml = order.order_items
+          .map((item) => {
+            const name = lang === 'ua' ? item.product_name_ua : item.product_name_ru;
+            const image = item.products?.images?.[0];
+            const thumb = image
+              ? `<img src="${image}" alt="" loading="lazy" />`
+              : `<span class="item-thumb-placeholder" aria-hidden="true">🌿</span>`;
+            return `
+              <div class="order-item-row">
+                <span class="item-thumb">${thumb}</span>
+                <span class="item-name">${name} × ${item.quantity}</span>
+                <span class="item-price">${formatPrice(item.unit_price * item.quantity, lang)}</span>
+              </div>
+            `;
+          })
+          .join('');
+
+        return `
+          <div class="order-card">
+            <div class="order-card-header">
+              <span class="order-number">${orderNumberTemplate.replace('{n}', String(order.order_number))}</span>
+              <span class="order-status status-${order.status}">${statusLabels[order.status] || order.status}</span>
+            </div>
+            <div class="order-date">${date}</div>
+            <div class="order-items">${itemsHtml}</div>
+            <div class="order-total"><span>Σ</span><span>${formatPrice(order.total, lang)}</span></div>
+          </div>
+        `;
+      })
+      .join('');
+  }
+
+  const loadingEl = document.getElementById('account-loading');
+  const authEl = document.getElementById('account-auth');
+  const dashboardEl = document.getElementById('account-dashboard');
+  const greetingEl = document.getElementById('account-greeting');
+  const logoutBtn = document.getElementById('logout-btn');
+  const googleBtn = document.getElementById('google-btn');
+
+  const tabBtns = document.querySelectorAll<HTMLButtonElement>('.tab-btn');
+  const loginForm = document.getElementById('login-form') as HTMLFormElement | null;
+  const signupForm = document.getElementById('signup-form') as HTMLFormElement | null;
+
+  tabBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach((b) => b.classList.toggle('active', b === btn));
+      const isLogin = btn.dataset.tab === 'login';
+      loginForm?.toggleAttribute('hidden', !isLogin);
+      signupForm?.toggleAttribute('hidden', isLogin);
+    });
+  });
+
+  function showError(formName: string, message: string) {
+    const el = document.querySelector<HTMLElement>(`.auth-error[data-for="${formName}"]`);
+    if (el) {
+      el.textContent = message;
+      el.hidden = false;
+    }
+  }
+
+  function clearError(formName: string) {
+    const el = document.querySelector<HTMLElement>(`.auth-error[data-for="${formName}"]`);
+    if (el) el.hidden = true;
+  }
+
+  function renderSession(user: { email?: string | null; user_metadata?: Record<string, unknown> } | null) {
+    loadingEl?.setAttribute('hidden', 'true');
+    if (user) {
+      authEl?.setAttribute('hidden', 'true');
+      dashboardEl?.removeAttribute('hidden');
+      const name = (user.user_metadata?.full_name as string | undefined) || user.email || '';
+      if (greetingEl) {
+        const template = greetingEl.dataset.template || '';
+        greetingEl.textContent = template.replace('{name}', name);
+      }
+      loadOrders();
+    } else {
+      dashboardEl?.setAttribute('hidden', 'true');
+      authEl?.removeAttribute('hidden');
+      ordersLoaded = false;
+    }
+  }
+
+  supabase.auth.getSession().then(({ data }) => {
+    renderSession(data.session?.user ?? null);
+  });
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    renderSession(session?.user ?? null);
+  });
+
+  loginForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearError('login');
+    const formData = new FormData(loginForm);
+    const email = String(formData.get('email') || '');
+    const password = String(formData.get('password') || '');
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      const isInvalid = error.message.toLowerCase().includes('invalid');
+      showError('login', isInvalid ? errInvalidText || error.message : errGenericText || error.message);
+    }
+  });
+
+  signupForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearError('signup');
+    const formData = new FormData(signupForm);
+    const fullName = String(formData.get('fullName') || '');
+    const email = String(formData.get('email') || '');
+    const password = String(formData.get('password') || '');
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: fullName } },
+    });
+
+    if (error) {
+      const isUserExists = error.message.toLowerCase().includes('already registered');
+      showError('signup', isUserExists ? errUserExistsText || error.message : errGenericText || error.message);
+      return;
+    }
+
+    if (!data.session) {
+      const msg = document.getElementById('signup-confirm-message');
+      msg?.removeAttribute('hidden');
+    }
+  });
+
+  googleBtn?.addEventListener('click', async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + window.location.pathname },
+    });
+  });
+
+  logoutBtn?.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+  });
+</script>

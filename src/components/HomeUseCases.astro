@@ -1,0 +1,451 @@
+---
+import { getDictionary, localizedPath, type Locale } from '@/i18n/config';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const dict = getDictionary(lang);
+const h = dict.home;
+
+const kicker = lang === 'ua' ? 'АРОМАТ У ДЕТАЛЯХ' : 'АРОМАТ В ДЕТАЛЯХ';
+
+const cases = [
+  {
+    img: '/images/use-cases/bedroom.jpeg',
+    ua: 'Спальня',
+    ru: 'Спальня',
+    captionUa: 'затишний ранок і тихий вечір',
+    captionRu: 'уютное утро и тихий вечер',
+  },
+  {
+    img: '/images/use-cases/tea-ceremony.jpeg',
+    ua: 'Чайна церемонія',
+    ru: 'Чайная церемония',
+    captionUa: 'ритуал сповільнення',
+    captionRu: 'ритуал замедления',
+  },
+  {
+    img: '/images/use-cases/study.jpeg',
+    ua: 'Кабінет',
+    ru: 'Кабинет',
+    captionUa: 'концентрація без поспіху',
+    captionRu: 'концентрация без спешки',
+  },
+  {
+    img: '/images/use-cases/spa.jpeg',
+    ua: 'Спа-ритуал',
+    ru: 'Спа-ритуал',
+    captionUa: 'ванна як маленький ритуал',
+    captionRu: 'ванна как маленький ритуал',
+  },
+  {
+    img: '/images/use-cases/yoga.jpeg',
+    ua: 'Йога',
+    ru: 'Йога',
+    captionUa: 'глибокий подих, ясний розум',
+    captionRu: 'глубокое дыхание, ясный ум',
+  },
+  {
+    img: '/images/use-cases/tea-room.jpeg',
+    ua: 'Чайна кімната',
+    ru: 'Чайная комната',
+    captionUa: 'тепла розмова за чаєм',
+    captionRu: 'тёплый разговор за чаем',
+  },
+  {
+    img: '/images/use-cases/meditation.jpeg',
+    ua: 'Медитація',
+    ru: 'Медитация',
+    captionUa: 'момент тиші всередині',
+    captionRu: 'момент тишины внутри',
+  },
+  {
+    img: '/images/use-cases/office.jpeg',
+    ua: 'Офіс',
+    ru: 'Офис',
+    captionUa: 'спокій серед справ',
+    captionRu: 'спокойствие среди дел',
+  },
+  {
+    img: '/images/use-cases/reading.jpeg',
+    ua: 'Читання',
+    ru: 'Чтение',
+    captionUa: 'аромат для книги й тиші',
+    captionRu: 'аромат для книги и тишины',
+  },
+] as const;
+---
+
+<section class="use-cases">
+  <div class="container">
+    <div class="heading">
+      <span class="eyebrow">
+        <span class="line"></span>
+        {kicker}
+        <span class="line"></span>
+      </span>
+      <h2>{h.useCasesHeading}</h2>
+      <p>{h.useCasesSubtitle}</p>
+    </div>
+  </div>
+
+  <div class="carousel" data-carousel>
+    <button class="car-btn car-prev" type="button" aria-label="Previous" data-prev>‹</button>
+
+    <div class="car-track" data-track>
+      {
+        cases.map((c) => (
+          <a href={localizedPath(lang, '/catalog')} class="case-card" data-slide>
+            <img
+              src={c.img}
+              alt={lang === 'ua' ? c.ua : c.ru}
+              loading="lazy"
+              decoding="async"
+            />
+            <span class="case-overlay" aria-hidden="true" />
+            <span class="case-text">
+              <span class="case-label">{lang === 'ua' ? c.ua : c.ru}</span>
+              <span class="case-caption">{lang === 'ua' ? c.captionUa : c.captionRu}</span>
+            </span>
+          </a>
+        ))
+      }
+    </div>
+
+    <button class="car-btn car-next" type="button" aria-label="Next" data-next>›</button>
+  </div>
+
+  <div class="container">
+    <div class="car-dots" data-dots>
+      {cases.map((_, i) => <button class="dot" type="button" aria-label={`Slide ${i + 1}`} data-dot={i} />)}
+    </div>
+
+    <p class="use-cases-outro">
+      {lang === 'ua'
+        ? 'Кожен простір заслуговує на свій аромат'
+        : 'Каждое пространство заслуживает свой аромат'}
+    </p>
+  </div>
+</section>
+
+<style>
+  .use-cases {
+    background: var(--color-bg);
+    padding-block: 52px 72px;
+  }
+
+  .heading {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-accent-dark);
+    margin-bottom: 16px;
+  }
+
+  .line {
+    width: 28px;
+    height: 1px;
+    background: var(--color-accent-dark);
+    opacity: 0.5;
+  }
+
+  .heading h2 {
+    font-size: 26px;
+    margin: 0 0 8px;
+  }
+
+  .heading p {
+    color: var(--color-text-muted);
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 17px;
+    margin: 0;
+  }
+
+  /* full-bleed carousel — escapes the .container so it can use the whole viewport width */
+  .carousel {
+    --gutter: max(20px, calc((100vw - 1160px) / 2 + 20px));
+    position: relative;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+  }
+
+  .car-track {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    padding: 4px var(--gutter) 18px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .car-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .case-card {
+    position: relative;
+    display: block;
+    flex: 0 0 auto;
+    width: 320px;
+    aspect-ratio: 4 / 5;
+    scroll-snap-align: center;
+    border-radius: 18px;
+    overflow: hidden;
+    background: var(--color-accent-soft);
+    text-decoration: none;
+    opacity: 0.55;
+    transform: scale(0.93);
+    transition: transform 0.4s ease, opacity 0.4s ease;
+  }
+
+  .case-card.is-active {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .case-card img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+
+  .case-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(30, 22, 14, 0.8) 0%, rgba(30, 22, 14, 0.18) 45%, rgba(30, 22, 14, 0) 70%);
+    transition: background 0.3s ease;
+  }
+
+  .case-text {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 18px 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .case-label {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.01em;
+  }
+
+  .case-caption {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .case-card:hover img {
+    transform: scale(1.06);
+  }
+
+  .case-card:hover .case-overlay {
+    background: linear-gradient(to top, rgba(30, 22, 14, 0.85) 0%, rgba(30, 22, 14, 0.28) 50%, rgba(30, 22, 14, 0) 75%);
+  }
+
+  .car-btn {
+    position: absolute;
+    top: 46%;
+    transform: translateY(-50%);
+    z-index: 5;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: var(--shadow-sm, 0 2px 10px rgba(30, 22, 14, 0.1));
+    color: var(--color-text);
+    font-size: 20px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .car-prev {
+    left: var(--gutter);
+    transform: translate(-50%, -50%);
+  }
+
+  .car-next {
+    right: var(--gutter);
+    transform: translate(50%, -50%);
+  }
+
+  .car-btn:hover {
+    background: var(--color-accent-dark);
+    border-color: var(--color-accent-dark);
+    color: #fff;
+  }
+
+  .car-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    padding: 0;
+    border-radius: 50%;
+    border: none;
+    background: var(--color-border);
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .dot.active {
+    background: var(--color-accent-dark);
+    transform: scale(1.35);
+  }
+
+  .use-cases-outro {
+    text-align: center;
+    margin: 26px 0 0;
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 19px;
+    color: var(--color-text-muted);
+  }
+
+  @media (max-width: 720px) {
+    .case-card {
+      width: 230px;
+    }
+    .case-label {
+      font-size: 15px;
+    }
+    .case-caption {
+      font-size: 12px;
+    }
+    .car-btn {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  const carousel = document.querySelector('[data-carousel]');
+
+  if (carousel) {
+    const track = carousel.querySelector('[data-track]');
+    const slides = Array.from(track.children);
+    const prevBtn = carousel.querySelector('[data-prev]');
+    const nextBtn = carousel.querySelector('[data-next]');
+    const dotsWrap = document.querySelector('[data-dots]');
+    const dots = dotsWrap ? Array.from(dotsWrap.children) : [];
+
+    let index = 0;
+    let autoplayTimer = null;
+
+    function updateActive() {
+      dots.forEach((d, i) => d.classList.toggle('active', i === index));
+      slides.forEach((s, i) => s.classList.toggle('is-active', i === index));
+    }
+
+    function scrollToIndex(i, smooth = true) {
+      index = (i + slides.length) % slides.length;
+      const slide = slides[index];
+      const offset = slide.offsetLeft - (track.clientWidth - slide.clientWidth) / 2;
+      track.scrollTo({ left: offset, behavior: smooth ? 'smooth' : 'auto' });
+      updateActive();
+    }
+
+    function next() {
+      scrollToIndex(index + 1);
+    }
+
+    function prev() {
+      scrollToIndex(index - 1);
+    }
+
+    function startAutoplay() {
+      stopAutoplay();
+      autoplayTimer = window.setInterval(next, 4200);
+    }
+
+    function stopAutoplay() {
+      if (autoplayTimer) {
+        window.clearInterval(autoplayTimer);
+        autoplayTimer = null;
+      }
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        next();
+        startAutoplay();
+      });
+    }
+
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => {
+        prev();
+        startAutoplay();
+      });
+    }
+
+    dots.forEach((d, i) => {
+      d.addEventListener('click', () => {
+        scrollToIndex(i);
+        startAutoplay();
+      });
+    });
+
+    carousel.addEventListener('mouseenter', stopAutoplay);
+    carousel.addEventListener('mouseleave', startAutoplay);
+    carousel.addEventListener('touchstart', stopAutoplay, { passive: true });
+
+    let scrollTimeout;
+    track.addEventListener('scroll', () => {
+      window.clearTimeout(scrollTimeout);
+      scrollTimeout = window.setTimeout(() => {
+        const trackCenter = track.scrollLeft + track.clientWidth / 2;
+        let closest = 0;
+        let closestDist = Infinity;
+        slides.forEach((s, i) => {
+          const c = s.offsetLeft + s.clientWidth / 2;
+          const dist = Math.abs(c - trackCenter);
+          if (dist < closestDist) {
+            closestDist = dist;
+            closest = i;
+          }
+        });
+        index = closest;
+        updateActive();
+      }, 100);
+    });
+
+    updateActive();
+    startAutoplay();
+  }
+</script>

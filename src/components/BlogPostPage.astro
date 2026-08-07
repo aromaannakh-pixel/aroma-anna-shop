@@ -1,0 +1,97 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getDictionary, localizedPath, type Locale } from '@/i18n/config';
+import type { BlogPostRow } from '@/lib/blog';
+
+interface Props {
+  lang: Locale;
+  post: BlogPostRow;
+}
+
+const { lang, post } = Astro.props;
+const dict = getDictionary(lang);
+const b = dict.blog;
+
+const title = lang === 'ua' ? post.title_ua : post.title_ru;
+const content = (lang === 'ua' ? post.content_ua : post.content_ru) ?? '';
+const excerpt = lang === 'ua' ? post.excerpt_ua : post.excerpt_ru;
+const seoTitle = (lang === 'ua' ? post.seo_title_ua : post.seo_title_ru) || title;
+const seoDescription = (lang === 'ua' ? post.seo_description_ua : post.seo_description_ru) || excerpt || undefined;
+
+const date = new Date(post.published_at ?? post.created_at).toLocaleDateString(lang === 'ua' ? 'uk-UA' : 'en-US');
+const path = `/blog/${post.slug}`;
+---
+
+<BaseLayout lang={lang} path={path} title={seoTitle} description={seoDescription}>
+  <script type="application/ld+json" is:inline set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: title,
+    description: excerpt || undefined,
+    image: post.cover_image || undefined,
+    datePublished: post.published_at || post.created_at,
+    dateModified: post.updated_at,
+  })} />
+
+  <article class="container blog-post">
+    <a class="back-link" href={localizedPath(lang, '/blog')}>← {b.backToBlog}</a>
+
+    <h1>{title}</h1>
+    <p class="post-date">{date}</p>
+
+    {post.cover_image && (
+      <div class="cover">
+        <img src={post.cover_image} alt={title} />
+      </div>
+    )}
+
+    <div class="content">
+      {content.split(/\n{2,}/).map((para) => (
+        <p>{para}</p>
+      ))}
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .blog-post {
+    padding-block: 40px 80px;
+    max-width: 720px;
+  }
+
+  .back-link {
+    display: inline-block;
+    font-size: 14px;
+    color: var(--color-text-muted);
+    margin-bottom: 20px;
+  }
+
+  .blog-post h1 {
+    margin-bottom: 8px;
+  }
+
+  .post-date {
+    color: var(--color-text-muted);
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+
+  .cover {
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .cover img {
+    width: 100%;
+    display: block;
+  }
+
+  .content {
+    line-height: 1.75;
+  }
+
+  .content p {
+    margin-bottom: 1em;
+  }
+</style>

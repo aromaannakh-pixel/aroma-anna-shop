@@ -1,0 +1,301 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getDictionary, localizedPath, type Locale } from '@/i18n/config';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const dict = getDictionary(lang);
+const c = dict.checkout;
+---
+
+<BaseLayout lang={lang} path="/checkout" title={c.title}>
+  <section class="container checkout" id="checkout-root" data-lang={lang}>
+    <h1>{c.title}</h1>
+
+    <div id="checkout-empty" class="empty-state" hidden>
+      <p class="empty-title">{c.emptyCartTitle}</p>
+      <p class="empty-body">{c.emptyCartBody}</p>
+      <a class="btn" href={localizedPath(lang, '/catalog')}>{c.backToCatalog}</a>
+    </div>
+
+    <div id="checkout-success" class="success-state" hidden>
+      <p class="success-title">{c.successTitle}</p>
+      <p id="checkout-success-body" class="success-body" data-template={c.successBody}></p>
+      <a class="btn" href={localizedPath(lang, '/catalog')}>{c.backToCatalog}</a>
+    </div>
+
+    <div id="checkout-content" class="checkout-grid" hidden>
+      <div class="order-summary">
+        <h2>{c.yourOrder}</h2>
+        <div id="checkout-items"></div>
+        <div class="summary-total-row">
+          <span>{dict.common.total}</span>
+          <span id="checkout-total">—</span>
+        </div>
+      </div>
+
+      <form id="checkout-form" class="checkout-form">
+        <label>
+          {c.name}
+          <input type="text" name="name" required />
+        </label>
+        <label>
+          {c.phone}
+          <input type="tel" name="phone" required placeholder="+380..." />
+        </label>
+        <label>
+          {c.email}
+          <input type="email" name="email" />
+        </label>
+        <label>
+          {c.deliveryMethod}
+          <select name="deliveryMethod" id="delivery-method">
+            <option value="nova_poshta">{c.novaPoshta}</option>
+            <option value="ukrposhta">{c.ukrposhta}</option>
+            <option value="pickup">{c.pickup}</option>
+          </select>
+        </label>
+        <label id="city-field">
+          {c.city}
+          <input type="text" name="city" />
+        </label>
+        <label id="address-field">
+          {c.address}
+          <input type="text" name="address" />
+        </label>
+        <label>
+          {c.comment}
+          <textarea name="comment" rows="3"></textarea>
+        </label>
+
+        <p id="checkout-error" class="checkout-error" hidden data-generic-text={c.errorGeneric}></p>
+
+        <button type="submit" id="checkout-submit" class="btn submit-btn">{c.submit}</button>
+      </form>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .checkout {
+    padding-block: 40px 80px;
+  }
+
+  .checkout h1 {
+    margin-bottom: 24px;
+  }
+
+  .empty-state,
+  .success-state {
+    text-align: center;
+    padding-block: 60px;
+  }
+
+  .empty-title,
+  .success-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .empty-body,
+  .success-body {
+    color: var(--color-text-muted);
+    margin-bottom: 20px;
+  }
+
+  .checkout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 40px;
+    align-items: start;
+  }
+
+  .checkout-grid[hidden] {
+    display: none;
+  }
+
+  .order-summary {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .order-summary h2 {
+    font-size: 16px;
+    margin: 0 0 14px;
+  }
+
+  .summary-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 14px;
+    padding-block: 8px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .summary-total-row {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .checkout-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .checkout-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
+  .checkout-form input,
+  .checkout-form select,
+  .checkout-form textarea {
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--color-text);
+  }
+
+  .submit-btn {
+    margin-top: 6px;
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.6;
+  }
+
+  .checkout-error {
+    background: #fbe7e7;
+    color: var(--color-sale);
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    font-size: 14px;
+  }
+
+  @media (max-width: 780px) {
+    .checkout-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  import { getCart, getCartTotal, clearCart } from '@/lib/cart';
+  import { formatPrice } from '@/lib/format';
+  import { supabase } from '@/lib/supabase';
+  import type { Locale } from '@/i18n/config';
+
+  const root = document.getElementById('checkout-root');
+  const lang = (root?.dataset.lang as Locale) || 'ua';
+
+  const emptyEl = document.getElementById('checkout-empty');
+  const successEl = document.getElementById('checkout-success');
+  const successBodyEl = document.getElementById('checkout-success-body');
+  const contentEl = document.getElementById('checkout-content');
+  const itemsEl = document.getElementById('checkout-items');
+  const totalEl = document.getElementById('checkout-total');
+  const form = document.getElementById('checkout-form') as HTMLFormElement | null;
+  const errorEl = document.getElementById('checkout-error');
+  const submitBtn = document.getElementById('checkout-submit') as HTMLButtonElement | null;
+  const deliverySelect = document.getElementById('delivery-method') as HTMLSelectElement | null;
+  const addressField = document.getElementById('address-field');
+
+  const successBodyTemplate = successBodyEl?.dataset.template || '';
+
+  function toggleAddressField() {
+    if (!deliverySelect || !addressField) return;
+    addressField.style.display = deliverySelect.value === 'pickup' ? 'none' : 'flex';
+  }
+
+  const cart = getCart();
+
+  if (cart.length === 0) {
+    emptyEl?.removeAttribute('hidden');
+  } else {
+    contentEl?.removeAttribute('hidden');
+    itemsEl!.innerHTML = cart
+      .map((item) => {
+        const name = lang === 'ua' ? item.nameUa : item.nameRu;
+        return `<div class="summary-item"><span>${name} × ${item.quantity}</span><span>${formatPrice(item.unitPrice * item.quantity, lang)}</span></div>`;
+      })
+      .join('');
+    totalEl!.textContent = formatPrice(getCartTotal(), lang);
+
+    deliverySelect?.addEventListener('change', toggleAddressField);
+    toggleAddressField();
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!form) return;
+      errorEl?.setAttribute('hidden', 'true');
+      if (submitBtn) submitBtn.disabled = true;
+
+      const formData = new FormData(form);
+      const customer = {
+        name: String(formData.get('name') || ''),
+        phone: String(formData.get('phone') || ''),
+        email: String(formData.get('email') || '') || undefined,
+        deliveryMethod: String(formData.get('deliveryMethod') || 'nova_poshta'),
+        city: String(formData.get('city') || '') || undefined,
+        address: String(formData.get('address') || '') || undefined,
+        comment: String(formData.get('comment') || '') || undefined,
+        lang,
+      };
+
+      const items = getCart().map((i) => ({ productId: i.productId, quantity: i.quantity }));
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      try {
+        const res = await fetch('/.netlify/functions/checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+          body: JSON.stringify({ items, customer }),
+        });
+        const result = await res.json();
+
+        if (res.ok && result.success) {
+          clearCart();
+          contentEl?.setAttribute('hidden', 'true');
+          successEl?.removeAttribute('hidden');
+          if (successBodyEl) {
+            successBodyEl.textContent = successBodyTemplate.replace('{n}', String(result.orderNumber));
+          }
+        } else {
+          if (errorEl) {
+            errorEl.textContent = errorEl.dataset.genericText || 'Error';
+            errorEl.removeAttribute('hidden');
+          }
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      } catch {
+        if (errorEl) {
+          errorEl.textContent = errorEl.dataset.genericText || 'Error';
+          errorEl.removeAttribute('hidden');
+        }
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    });
+  }
+</script>

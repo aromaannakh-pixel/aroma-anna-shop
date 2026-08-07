@@ -1,0 +1,56 @@
+---
+import Header from '@/components/Header.astro';
+import Footer from '@/components/Footer.astro';
+import CartDrawer from '@/components/CartDrawer.astro';
+import { getDictionary, localizedPath, type Locale } from '@/i18n/config';
+import '@/styles/global.css';
+
+interface Props {
+  lang: Locale;
+  /** мовно-нейтральний шлях поточної сторінки, напр. '/catalog', '/product/svicha-lavanda' */
+  path: string;
+  title?: string;
+  description?: string;
+  /** Для службових сторінок (адмінка тощо) — прибирає з пошукової видачі */
+  noindex?: boolean;
+}
+
+const { lang, path, title, description, noindex } = Astro.props;
+const dict = getDictionary(lang);
+const pageTitle = title ? `${title} — ${dict.siteName}` : `${dict.siteName} — ${dict.tagline}`;
+const pageDescription = description ?? dict.tagline;
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Tangerine:wght@700&display=swap"
+      rel="stylesheet"
+    />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:type" content="website" />
+    <link rel="canonical" href={Astro.url.href} />
+    <link rel="alternate" hreflang="uk" href={new URL(localizedPath('ua', path), Astro.site).href} />
+    <link rel="alternate" hreflang="ru" href={new URL(localizedPath('ru', path), Astro.site).href} />
+    <link rel="alternate" hreflang="x-default" href={new URL(localizedPath('ua', path), Astro.site).href} />
+  </head>
+  <body>
+    <Header lang={lang} path={path} />
+    <main>
+      <slot />
+    </main>
+    <Footer lang={lang} />
+    <CartDrawer lang={lang} />
+  </body>
+</html>

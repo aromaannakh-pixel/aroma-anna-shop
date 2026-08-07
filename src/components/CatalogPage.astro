@@ -1,0 +1,204 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ProductCard from '@/components/ProductCard.astro';
+import { getDictionary, type Locale } from '@/i18n/config';
+import { fetchCatalogData } from '@/lib/catalog';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const dict = getDictionary(lang);
+const { categories, products } = await fetchCatalogData();
+---
+
+<BaseLayout lang={lang} path="/catalog" title={dict.nav.catalog}>
+  <section class="container catalog">
+    <h1>{dict.nav.catalog}</h1>
+
+    <div class="catalog-toolbar">
+      <div class="category-pills" role="group" aria-label={dict.common.allCategories}>
+        <button type="button" class="category-pill active" data-slug="all">
+          {dict.common.allCategories}
+        </button>
+        {
+          categories.map((c) => (
+            <button type="button" class="category-pill" data-slug={c.slug}>
+              {lang === 'ua' ? c.name_ua : c.name_ru}
+            </button>
+          ))
+        }
+      </div>
+
+      <label class="sort-control">
+        {dict.common.sortBy}
+        <select id="sort-select">
+          <option value="newest">{dict.common.sortNewest}</option>
+          <option value="price_asc">{dict.common.sortPriceAsc}</option>
+          <option value="price_desc">{dict.common.sortPriceDesc}</option>
+        </select>
+      </label>
+    </div>
+
+    {
+      products.length === 0 ? (
+        <p class="empty">{dict.common.noProducts}</p>
+      ) : (
+        <div class="catalog-grid">
+          {products.map((p) => (
+            <ProductCard lang={lang} product={p} />
+          ))}
+        </div>
+      )
+    }
+  </section>
+</BaseLayout>
+
+<style>
+  .catalog {
+    padding-block: 40px 80px;
+  }
+
+  .catalog h1 {
+    margin-bottom: 24px;
+  }
+
+  .catalog-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .category-pills {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 18px;
+  }
+
+  .category-pill {
+    background: none;
+    border: none;
+    padding: 0 0 3px;
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    position: relative;
+  }
+
+  .category-pill::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 100%;
+    bottom: 0;
+    height: 1px;
+    background: var(--color-accent-dark);
+    transition: right 0.25s ease;
+  }
+
+  .category-pill:hover {
+    color: var(--color-text);
+  }
+
+  .category-pill.active {
+    color: var(--color-accent-dark);
+  }
+
+  .category-pill.active::after {
+    right: 0;
+  }
+
+  .sort-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  .sort-control select {
+    padding: 4px 2px 6px;
+    border: none;
+    border-bottom: 1px solid var(--color-border);
+    border-radius: 0;
+    background: none;
+    color: var(--color-text);
+    font-size: 14px;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 400;
+  }
+
+  .catalog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+  }
+
+  .empty {
+    color: var(--color-text-muted);
+    padding-block: 40px;
+    text-align: center;
+  }
+</style>
+
+<script>
+  const grid = document.querySelector<HTMLDivElement>('.catalog-grid');
+  const pills = document.querySelectorAll<HTMLButtonElement>('.category-pill');
+  const sortSelect = document.getElementById('sort-select') as HTMLSelectElement | null;
+
+  if (grid) {
+    const cards = Array.from(grid.querySelectorAll<HTMLAnchorElement>('.product-card'));
+    const params = new URLSearchParams(location.search);
+    let activeCategory = params.get('category') || 'all';
+    let activeSort = params.get('sort') || 'newest';
+
+    function applyFilterSort() {
+      cards.forEach((card) => {
+        const match = activeCategory === 'all' || card.dataset.categorySlug === activeCategory;
+        card.style.display = match ? '' : 'none';
+      });
+
+      const sorted = [...cards].sort((a, b) => {
+        if (activeSort === 'price_asc') return Number(a.dataset.price) - Number(b.dataset.price);
+        if (activeSort === 'price_desc') return Number(b.dataset.price) - Number(a.dataset.price);
+        return Number(b.dataset.created) - Number(a.dataset.created);
+      });
+      sorted.forEach((card) => grid?.appendChild(card));
+
+      pills.forEach((p) => p.classList.toggle('active', p.dataset.slug === activeCategory));
+
+      const newParams = new URLSearchParams();
+      if (activeCategory !== 'all') newParams.set('category', activeCategory);
+      if (activeSort !== 'newest') newParams.set('sort', activeSort);
+      const qs = newParams.toString();
+      history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+    }
+
+    pills.forEach((pill) => {
+      pill.addEventListener('click', () => {
+        activeCategory = pill.dataset.slug || 'all';
+        applyFilterSort();
+      });
+    });
+
+    if (sortSelect) {
+      sortSelect.value = activeSort;
+      sortSelect.addEventListener('change', () => {
+        activeSort = sortSelect.value;
+        applyFilterSort();
+      });
+    }
+
+    applyFilterSort();
+  }
+</script>

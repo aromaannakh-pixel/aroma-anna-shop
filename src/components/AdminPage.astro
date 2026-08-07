@@ -1,0 +1,1250 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+// Адмінка — службовий інструмент лише для власниці, тому без мультимови й поза
+// пошуковою видачею (noindex). Дані захищені RLS (is_admin()) незалежно від UI.
+---
+
+<BaseLayout lang="ua" path="/admin" title="Адмінка" noindex>
+  <section class="container admin" id="admin-root">
+    <div id="admin-loading" class="state-msg">Перевірка доступу...</div>
+
+    <div id="admin-denied" class="state-msg" hidden>
+      Доступ лише для адміністратора. <a href="/account">Увійти</a>
+    </div>
+
+    <div id="admin-content" hidden>
+      <div class="admin-top">
+        <h1>Адмінка</h1>
+        <div class="publish-block">
+          <button type="button" id="publish-btn" class="btn">Опублікувати зміни на сайт</button>
+          <span id="publish-status" class="publish-status"></span>
+        </div>
+      </div>
+
+      <div class="admin-tabs">
+        <button type="button" class="admin-tab active" data-tab="orders">Замовлення</button>
+        <button type="button" class="admin-tab" data-tab="products">Товари</button>
+        <button type="button" class="admin-tab" data-tab="categories">Категорії</button>
+        <button type="button" class="admin-tab" data-tab="blog">Блог</button>
+      </div>
+
+      <!-- ЗАМОВЛЕННЯ -->
+      <div class="admin-panel" id="panel-orders">
+        <div class="panel-header">
+          <h2>Замовлення</h2>
+        </div>
+        <div class="table-scroll"><table class="admin-table">
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>Клієнт</th>
+              <th>Телефон</th>
+              <th>Товари</th>
+              <th>Доставка</th>
+              <th>Сума</th>
+              <th>Статус</th>
+              <th>Дата</th>
+            </tr>
+          </thead>
+          <tbody id="orders-tbody"></tbody>
+        </table></div>
+      </div>
+
+      <!-- ТОВАРИ -->
+      <div class="admin-panel" id="panel-products" hidden>
+        <div class="panel-header">
+          <h2>Товари</h2>
+          <button type="button" id="add-product-btn" class="btn">+ Додати товар</button>
+        </div>
+        <div class="filter-bar">
+          <input type="search" id="product-search" class="filter-input" placeholder="Пошук за назвою..." />
+          <select id="product-filter-category" class="filter-select">
+            <option value="">Усі категорії</option>
+          </select>
+          <select id="product-filter-status" class="filter-select">
+            <option value="">Усі статуси</option>
+            <option value="published">Опубліковано</option>
+            <option value="unpublished">Не опубліковано</option>
+            <option value="out">Немає в наявності</option>
+          </select>
+          <span id="product-filter-count" class="filter-count"></span>
+        </div>
+        <div class="table-scroll"><table class="admin-table">
+          <thead>
+            <tr>
+              <th>Назва</th>
+              <th>Категорія</th>
+              <th>Ціна</th>
+              <th>Знижка</th>
+              <th>Stock</th>
+              <th>В наявності</th>
+              <th>Опубліковано</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="products-tbody"></tbody>
+        </table></div>
+      </div>
+
+      <!-- КАТЕГОРІЇ -->
+      <div class="admin-panel" id="panel-categories" hidden>
+        <div class="panel-header">
+          <h2>Категорії</h2>
+          <button type="button" id="add-category-btn" class="btn">+ Додати категорію</button>
+        </div>
+        <div class="table-scroll"><table class="admin-table">
+          <thead>
+            <tr>
+              <th>Назва (UA)</th>
+              <th>Назва (RU)</th>
+              <th>Slug</th>
+              <th>Порядок</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="categories-tbody"></tbody>
+        </table></div>
+      </div>
+
+      <!-- БЛОГ -->
+      <div class="admin-panel" id="panel-blog" hidden>
+        <div class="panel-header">
+          <h2>Блог</h2>
+          <button type="button" id="add-blog-btn" class="btn">+ Додати пост</button>
+        </div>
+        <div class="table-scroll"><table class="admin-table">
+          <thead>
+            <tr>
+              <th>Заголовок</th>
+              <th>Slug</th>
+              <th>Опубліковано</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="blog-tbody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ДІАЛОГ: товар -->
+    <dialog id="product-dialog" class="admin-dialog">
+      <form id="product-form">
+        <h2 id="product-dialog-title">Товар</h2>
+        <input type="hidden" name="id" />
+
+        <div class="form-grid">
+          <label>Slug<input type="text" name="slug" required /></label>
+          <label>SKU<input type="text" name="sku" /></label>
+
+          <label>Назва (UA)<input type="text" name="name_ua" required /></label>
+          <label>Назва (RU)<input type="text" name="name_ru" required /></label>
+
+          <label>Короткий опис (UA)<textarea name="short_desc_ua" rows="2"></textarea></label>
+          <label>Короткий опис (RU)<textarea name="short_desc_ru" rows="2"></textarea></label>
+
+          <label class="span-2">Довгий SEO-опис (UA)<textarea name="description_ua" rows="4"></textarea></label>
+          <label class="span-2">Довгий SEO-опис (RU)<textarea name="description_ru" rows="4"></textarea></label>
+
+          <label>SEO title (UA)<input type="text" name="seo_title_ua" /></label>
+          <label>SEO title (RU)<input type="text" name="seo_title_ru" /></label>
+          <label>SEO description (UA)<textarea name="seo_description_ua" rows="2"></textarea></label>
+          <label>SEO description (RU)<textarea name="seo_description_ru" rows="2"></textarea></label>
+
+          <label>Категорія
+            <select name="category_id" id="product-category-select">
+              <option value="">— без категорії —</option>
+            </select>
+          </label>
+          <label class="span-2">
+            Фото
+            <input type="text" name="images" placeholder="https://..., https://..." />
+            <div class="image-uploader">
+              <input type="file" id="product-image-input" accept="image/*" multiple hidden />
+              <button type="button" id="product-image-upload-btn" class="btn btn-outline btn-sm">+ Завантажити фото</button>
+              <span id="product-image-status" class="image-status"></span>
+            </div>
+            <div id="product-image-previews" class="image-previews"></div>
+          </label>
+
+          <label>Ціна, ₴<input type="number" name="price" step="0.01" min="0" required /></label>
+          <label>Ціна зі знижкою, ₴<input type="number" name="sale_price" step="0.01" min="0" /></label>
+          <label class="checkbox-label"><input type="checkbox" name="sale_active" /> Знижка активна</label>
+          <label>Знижка діє до (необов'язково)<input type="datetime-local" name="sale_ends_at" /></label>
+
+          <label>Кількість на складі<input type="number" name="stock" min="0" step="1" required /></label>
+          <label class="checkbox-label"><input type="checkbox" name="in_stock" checked /> В наявності</label>
+          <label class="checkbox-label"><input type="checkbox" name="published" /> Опубліковано</label>
+        </div>
+
+        <p class="dialog-error" id="product-dialog-error" hidden></p>
+
+        <div class="dialog-actions">
+          <button type="button" id="product-cancel" class="btn btn-outline">Скасувати</button>
+          <button type="submit" class="btn">Зберегти</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- ДІАЛОГ: категорія -->
+    <dialog id="category-dialog" class="admin-dialog">
+      <form id="category-form">
+        <h2 id="category-dialog-title">Категорія</h2>
+        <input type="hidden" name="id" />
+        <div class="form-grid">
+          <label>Slug<input type="text" name="slug" required /></label>
+          <label>Порядок сортування<input type="number" name="sort_order" step="1" value="0" /></label>
+          <label>Назва (UA)<input type="text" name="name_ua" required /></label>
+          <label>Назва (RU)<input type="text" name="name_ru" required /></label>
+        </div>
+        <p class="dialog-error" id="category-dialog-error" hidden></p>
+        <div class="dialog-actions">
+          <button type="button" id="category-cancel" class="btn btn-outline">Скасувати</button>
+          <button type="submit" class="btn">Зберегти</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- ДІАЛОГ: блог-пост -->
+    <dialog id="blog-dialog" class="admin-dialog">
+      <form id="blog-form">
+        <h2 id="blog-dialog-title">Пост блогу</h2>
+        <input type="hidden" name="id" />
+        <div class="form-grid">
+          <label>Slug<input type="text" name="slug" required /></label>
+          <label>Фото обкладинки (URL)<input type="text" name="cover_image" /></label>
+
+          <label>Заголовок (UA)<input type="text" name="title_ua" required /></label>
+          <label>Заголовок (RU)<input type="text" name="title_ru" required /></label>
+
+          <label>Короткий опис (UA)<textarea name="excerpt_ua" rows="2"></textarea></label>
+          <label>Короткий опис (RU)<textarea name="excerpt_ru" rows="2"></textarea></label>
+
+          <label class="span-2">Текст (UA)<textarea name="content_ua" rows="6"></textarea></label>
+          <label class="span-2">Текст (RU)<textarea name="content_ru" rows="6"></textarea></label>
+
+          <label>SEO title (UA)<input type="text" name="seo_title_ua" /></label>
+          <label>SEO title (RU)<input type="text" name="seo_title_ru" /></label>
+          <label>SEO description (UA)<textarea name="seo_description_ua" rows="2"></textarea></label>
+          <label>SEO description (RU)<textarea name="seo_description_ru" rows="2"></textarea></label>
+
+          <label class="checkbox-label"><input type="checkbox" name="published" /> Опубліковано</label>
+        </div>
+        <p class="dialog-error" id="blog-dialog-error" hidden></p>
+        <div class="dialog-actions">
+          <button type="button" id="blog-cancel" class="btn btn-outline">Скасувати</button>
+          <button type="submit" class="btn">Зберегти</button>
+        </div>
+      </form>
+    </dialog>
+  </section>
+</BaseLayout>
+
+<style>
+  .admin {
+    padding-block: 40px 100px;
+  }
+
+  .state-msg {
+    color: var(--color-text-muted);
+    padding-block: 60px;
+    text-align: center;
+  }
+
+  .admin h1 {
+    margin: 0;
+  }
+
+  .admin-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .publish-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .publish-status {
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
+  .publish-status.ok {
+    color: var(--color-accent-dark);
+  }
+
+  .publish-status.err {
+    color: var(--color-sale);
+  }
+
+  .admin-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .admin-tab {
+    padding: 8px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .admin-tab.active {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fff;
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .panel-header h2 {
+    font-size: 18px;
+    margin: 0;
+  }
+
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .filter-input,
+  .filter-select {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    font-size: 14px;
+    color: var(--color-text);
+  }
+
+  .filter-input {
+    flex: 1 1 220px;
+    min-width: 180px;
+  }
+
+  .filter-select {
+    flex: 0 0 auto;
+  }
+
+  .filter-count {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin-left: auto;
+  }
+
+  .table-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+  }
+
+  .admin-table {
+    width: 100%;
+    min-width: 640px;
+    border-collapse: collapse;
+    background: var(--color-surface);
+    font-size: 14px;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  .admin-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .row-actions {
+    display: flex;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .row-actions button {
+    background: none;
+    border: none;
+    font-size: 13px;
+    color: var(--color-accent-dark);
+    text-decoration: underline;
+    padding: 0;
+  }
+
+  .row-actions .danger {
+    color: var(--color-sale);
+  }
+
+  .badge-mini {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #fbe7e7;
+    color: var(--color-sale);
+    font-weight: 600;
+  }
+
+  .admin-dialog {
+    border: none;
+    border-radius: var(--radius);
+    padding: 0;
+    width: min(720px, 92vw);
+    max-height: 88vh;
+  }
+
+  .admin-dialog::backdrop {
+    background: rgba(20, 15, 10, 0.4);
+  }
+
+  .admin-dialog form {
+    padding: 24px;
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+
+  .admin-dialog h2 {
+    margin: 0 0 18px;
+    font-size: 18px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .form-grid .span-2 {
+    grid-column: span 2;
+  }
+
+  .form-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
+  .form-grid label.checkbox-label {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .form-grid input,
+  .form-grid select,
+  .form-grid textarea {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--color-text);
+  }
+
+  .btn-sm {
+    padding: 7px 14px;
+    font-size: 13px;
+  }
+
+  .image-uploader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+  }
+
+  .image-status {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  .image-previews {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .image-previews:empty {
+    margin-top: 0;
+  }
+
+  .image-preview {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+  }
+
+  .image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .image-preview button {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(20, 15, 10, 0.6);
+    color: #fff;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+  }
+
+  .dialog-error {
+    background: #fbe7e7;
+    color: var(--color-sale);
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    margin-top: 14px;
+  }
+
+  .dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  @media (max-width: 640px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+    .form-grid .span-2 {
+      grid-column: span 1;
+    }
+
+    .panel-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .admin-tabs {
+      flex-wrap: wrap;
+    }
+
+    .admin-dialog {
+      width: 100vw;
+      max-height: 100vh;
+      height: 100vh;
+    }
+
+    .admin-dialog form {
+      max-height: 100vh;
+    }
+  }
+</style>
+
+<script>
+  import { requireAdmin, listAllProducts, saveProduct, deleteProduct, listAllCategories, saveCategory, deleteCategory, listAllBlogPosts, saveBlogPost, deleteBlogPost, uploadProductImage, listAllOrders, updateOrderStatus } from '@/lib/admin';
+  import type { ProductRow, CategoryRow } from '@/lib/catalog';
+  import type { BlogPostRow } from '@/lib/blog';
+
+  const loadingEl = document.getElementById('admin-loading');
+  const deniedEl = document.getElementById('admin-denied');
+  const contentEl = document.getElementById('admin-content');
+
+  let categoriesCache: CategoryRow[] = [];
+
+  // ---------- Публікація змін (Netlify build hook) ----------
+
+  const publishBtn = document.getElementById('publish-btn') as HTMLButtonElement | null;
+  const publishStatus = document.getElementById('publish-status');
+
+  publishBtn?.addEventListener('click', async () => {
+    const hookUrl = import.meta.env.PUBLIC_NETLIFY_BUILD_HOOK_URL;
+
+    if (!hookUrl) {
+      if (publishStatus) {
+        publishStatus.textContent = 'Build hook не налаштований — зверніться до розробниці.';
+        publishStatus.className = 'publish-status err';
+      }
+      return;
+    }
+
+    publishBtn.disabled = true;
+    if (publishStatus) {
+      publishStatus.textContent = 'Запускаю оновлення сайту...';
+      publishStatus.className = 'publish-status';
+    }
+
+    try {
+      const res = await fetch(hookUrl, { method: 'POST' });
+      if (!res.ok) throw new Error('bad_status');
+      if (publishStatus) {
+        publishStatus.textContent = 'Готово! Зміни зʼявляться на сайті за 1-2 хвилини.';
+        publishStatus.className = 'publish-status ok';
+      }
+    } catch {
+      if (publishStatus) {
+        publishStatus.textContent = 'Не вдалося запустити оновлення. Спробуйте ще раз.';
+        publishStatus.className = 'publish-status err';
+      }
+    } finally {
+      publishBtn.disabled = false;
+    }
+  });
+
+  // ---------- Ініціалізація / гейт доступу ----------
+
+  async function init() {
+    const admin = await requireAdmin();
+    loadingEl?.setAttribute('hidden', 'true');
+
+    if (!admin) {
+      deniedEl?.removeAttribute('hidden');
+      return;
+    }
+
+    contentEl?.removeAttribute('hidden');
+    await Promise.all([reloadOrders(), reloadCategories(), reloadProducts(), reloadBlog()]);
+  }
+
+  // ---------- Таби ----------
+
+  const tabBtns = document.querySelectorAll<HTMLButtonElement>('.admin-tab');
+  const panels: Record<string, HTMLElement | null> = {
+    orders: document.getElementById('panel-orders'),
+    products: document.getElementById('panel-products'),
+    categories: document.getElementById('panel-categories'),
+    blog: document.getElementById('panel-blog'),
+  };
+
+  tabBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach((b) => b.classList.toggle('active', b === btn));
+      const tab = btn.dataset.tab || 'products';
+      Object.entries(panels).forEach(([key, panel]) => panel?.toggleAttribute('hidden', key !== tab));
+    });
+  });
+
+  // ---------- Спільні хелпери форм ----------
+
+  type FieldType = 'text' | 'number' | 'checkbox' | 'datetime' | 'images';
+
+  function fillForm(form: HTMLFormElement, values: Record<string, unknown>) {
+    Object.entries(values).forEach(([key, value]) => {
+      const el = form.elements.namedItem(key) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+      if (!el) return;
+      if (el instanceof HTMLInputElement && el.type === 'checkbox') {
+        el.checked = Boolean(value);
+      } else if (el instanceof HTMLInputElement && el.type === 'datetime-local') {
+        el.value = value ? String(value).slice(0, 16) : '';
+      } else if (key === 'images' && Array.isArray(value)) {
+        el.value = value.join(', ');
+      } else {
+        el.value = value == null ? '' : String(value);
+      }
+    });
+  }
+
+  function resetForm(form: HTMLFormElement) {
+    form.reset();
+    const idInput = form.elements.namedItem('id') as HTMLInputElement | null;
+    if (idInput) idInput.value = '';
+  }
+
+  function collectPayload(form: HTMLFormElement, fieldTypes: Record<string, FieldType>): Record<string, unknown> {
+    const data = new FormData(form);
+    const payload: Record<string, unknown> = {};
+
+    for (const [key, type] of Object.entries(fieldTypes)) {
+      if (type === 'checkbox') {
+        const el = form.elements.namedItem(key) as HTMLInputElement | null;
+        payload[key] = el?.checked ?? false;
+        continue;
+      }
+      const raw = String(data.get(key) ?? '').trim();
+      if (type === 'number') {
+        payload[key] = raw === '' ? null : Number(raw);
+      } else if (type === 'images') {
+        payload[key] = raw
+          ? raw
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [];
+      } else if (type === 'datetime') {
+        payload[key] = raw ? new Date(raw).toISOString() : null;
+      } else {
+        payload[key] = raw === '' ? null : raw;
+      }
+    }
+
+    const idVal = String(data.get('id') || '');
+    if (idVal) payload.id = idVal;
+
+    return payload;
+  }
+
+  function showDialogError(el: HTMLElement | null, message: string) {
+    if (!el) return;
+    el.textContent = message;
+    el.hidden = false;
+  }
+
+  function hideDialogError(el: HTMLElement | null) {
+    if (el) el.hidden = true;
+  }
+
+  // ---------- ЗАМОВЛЕННЯ ----------
+
+  const ordersTbody = document.getElementById('orders-tbody');
+
+  const orderStatusLabels: Record<string, string> = {
+    new: 'Нове',
+    confirmed: 'Підтверджено',
+    shipped: 'Відправлено',
+    completed: 'Виконано',
+    cancelled: 'Скасовано',
+  };
+
+  async function reloadOrders() {
+    if (!ordersTbody) return;
+    const orders = await listAllOrders();
+
+    if (orders.length === 0) {
+      ordersTbody.innerHTML = '<tr><td colspan="8">Замовлень поки немає.</td></tr>';
+      return;
+    }
+
+    ordersTbody.innerHTML = orders
+      .map((o) => {
+        const itemsText = o.order_items.map((i) => `${i.product_name_ua} × ${i.quantity}`).join(', ');
+        const delivery =
+          o.delivery_method === 'pickup'
+            ? 'Самовивіз'
+            : [o.city, o.delivery_address].filter(Boolean).join(', ') || '—';
+        const date = new Date(o.created_at).toLocaleDateString('uk-UA');
+        const statusOptions = Object.entries(orderStatusLabels)
+          .map(([value, label]) => `<option value="${value}">${label}</option>`)
+          .join('');
+
+        return `
+          <tr data-id="${o.id}">
+            <td>№${o.order_number}</td>
+            <td>${o.customer_name}</td>
+            <td>${o.customer_phone}</td>
+            <td>${itemsText}</td>
+            <td>${delivery}</td>
+            <td>${Number(o.total).toFixed(0)} ₴</td>
+            <td><select data-order-status>${statusOptions}</select></td>
+            <td>${date}</td>
+          </tr>
+        `;
+      })
+      .join('');
+
+    ordersTbody.querySelectorAll<HTMLSelectElement>('select[data-order-status]').forEach((select) => {
+      const tr = select.closest('tr');
+      const id = tr?.dataset.id;
+      const order = orders.find((o) => o.id === id);
+      if (order) select.value = order.status;
+
+      select.addEventListener('change', async () => {
+        if (!id) return;
+        select.disabled = true;
+        try {
+          await updateOrderStatus(id, select.value);
+        } catch {
+          alert('Не вдалося оновити статус. Спробуй ще раз.');
+        } finally {
+          select.disabled = false;
+        }
+      });
+    });
+  }
+
+  // ---------- ТОВАРИ ----------
+
+  const productDialog = document.getElementById('product-dialog') as HTMLDialogElement | null;
+  const productForm = document.getElementById('product-form') as HTMLFormElement | null;
+  const productDialogTitle = document.getElementById('product-dialog-title');
+  const productDialogError = document.getElementById('product-dialog-error');
+  const productCategorySelect = document.getElementById('product-category-select') as HTMLSelectElement | null;
+  const productsTbody = document.getElementById('products-tbody');
+  const productSearchInput = document.getElementById('product-search') as HTMLInputElement | null;
+  const productFilterCategory = document.getElementById('product-filter-category') as HTMLSelectElement | null;
+  const productFilterStatus = document.getElementById('product-filter-status') as HTMLSelectElement | null;
+  const productFilterCount = document.getElementById('product-filter-count');
+
+  let productsCache: ProductRow[] = [];
+
+  const productFieldTypes: Record<string, FieldType> = {
+    slug: 'text',
+    sku: 'text',
+    name_ua: 'text',
+    name_ru: 'text',
+    short_desc_ua: 'text',
+    short_desc_ru: 'text',
+    description_ua: 'text',
+    description_ru: 'text',
+    seo_title_ua: 'text',
+    seo_title_ru: 'text',
+    seo_description_ua: 'text',
+    seo_description_ru: 'text',
+    category_id: 'text',
+    images: 'images',
+    price: 'number',
+    sale_price: 'number',
+    sale_active: 'checkbox',
+    sale_ends_at: 'datetime',
+    stock: 'number',
+    in_stock: 'checkbox',
+    published: 'checkbox',
+  };
+
+  // ---------- Завантаження фото товару ----------
+
+  const productImagesInput = productForm?.elements.namedItem('images') as HTMLInputElement | null;
+  const productImageFileInput = document.getElementById('product-image-input') as HTMLInputElement | null;
+  const productImageUploadBtn = document.getElementById('product-image-upload-btn') as HTMLButtonElement | null;
+  const productImageStatus = document.getElementById('product-image-status');
+  const productImagePreviews = document.getElementById('product-image-previews');
+
+  function getImageList(): string[] {
+    return (productImagesInput?.value || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  function setImageList(list: string[]) {
+    if (productImagesInput) productImagesInput.value = list.join(', ');
+    renderImagePreviews();
+  }
+
+  function renderImagePreviews() {
+    if (!productImagePreviews) return;
+    const list = getImageList();
+    productImagePreviews.innerHTML = list
+      .map(
+        (url, i) => `
+          <div class="image-preview">
+            <img src="${url}" alt="" />
+            <button type="button" data-idx="${i}" aria-label="Видалити фото">✕</button>
+          </div>
+        `
+      )
+      .join('');
+
+    productImagePreviews.querySelectorAll<HTMLButtonElement>('button[data-idx]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.dataset.idx);
+        const list = getImageList();
+        list.splice(idx, 1);
+        setImageList(list);
+      });
+    });
+  }
+
+  productImageUploadBtn?.addEventListener('click', () => productImageFileInput?.click());
+
+  productImageFileInput?.addEventListener('change', async () => {
+    const files = productImageFileInput.files;
+    if (!files || files.length === 0) return;
+
+    productImageUploadBtn?.setAttribute('disabled', 'true');
+    if (productImageStatus) productImageStatus.textContent = `Завантаження 0/${files.length}...`;
+
+    const list = getImageList();
+    let done = 0;
+
+    for (const file of Array.from(files)) {
+      try {
+        const url = await uploadProductImage(file);
+        list.push(url);
+      } catch (err) {
+        if (productImageStatus) {
+          productImageStatus.textContent = err instanceof Error ? `Помилка: ${err.message}` : 'Помилка завантаження';
+        }
+      }
+      done += 1;
+      if (productImageStatus && done < files.length) {
+        productImageStatus.textContent = `Завантаження ${done}/${files.length}...`;
+      }
+    }
+
+    setImageList(list);
+    productImageFileInput.value = '';
+    productImageUploadBtn?.removeAttribute('disabled');
+    if (productImageStatus && !productImageStatus.textContent?.startsWith('Помилка')) {
+      productImageStatus.textContent = 'Готово';
+      setTimeout(() => {
+        if (productImageStatus.textContent === 'Готово') productImageStatus.textContent = '';
+      }, 2000);
+    }
+  });
+
+  function populateCategorySelect() {
+    if (!productCategorySelect) return;
+    const current = productCategorySelect.value;
+    productCategorySelect.innerHTML = '<option value="">— без категорії —</option>';
+    categoriesCache.forEach((c) => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name_ua;
+      productCategorySelect.appendChild(opt);
+    });
+    productCategorySelect.value = current;
+  }
+
+  function populateProductFilterCategory() {
+    if (!productFilterCategory) return;
+    const current = productFilterCategory.value;
+    productFilterCategory.innerHTML = '<option value="">Усі категорії</option>';
+    categoriesCache.forEach((c) => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name_ua;
+      productFilterCategory.appendChild(opt);
+    });
+    productFilterCategory.value = current;
+  }
+
+  async function reloadProducts() {
+    if (!productsTbody) return;
+    productsCache = await listAllProducts();
+    populateProductFilterCategory();
+    renderProductsTable();
+  }
+
+  productSearchInput?.addEventListener('input', () => renderProductsTable());
+  productFilterCategory?.addEventListener('change', () => renderProductsTable());
+  productFilterStatus?.addEventListener('change', () => renderProductsTable());
+
+  function renderProductsTable() {
+    if (!productsTbody) return;
+    const categoryName = (id: string | null) => categoriesCache.find((c) => c.id === id)?.name_ua ?? '—';
+
+    const query = (productSearchInput?.value || '').trim().toLowerCase();
+    const categoryFilter = productFilterCategory?.value || '';
+    const statusFilter = productFilterStatus?.value || '';
+
+    const products = productsCache.filter((p) => {
+      if (query && !p.name_ua.toLowerCase().includes(query) && !p.name_ru.toLowerCase().includes(query)) return false;
+      if (categoryFilter && p.category_id !== categoryFilter) return false;
+      if (statusFilter === 'published' && !p.published) return false;
+      if (statusFilter === 'unpublished' && p.published) return false;
+      if (statusFilter === 'out' && p.in_stock) return false;
+      return true;
+    });
+
+    if (productFilterCount) {
+      productFilterCount.textContent = `${products.length} з ${productsCache.length}`;
+    }
+
+    productsTbody.innerHTML = products
+      .map((p) => {
+        return `
+          <tr data-id="${p.id}">
+            <td>${p.name_ua}</td>
+            <td>${categoryName(p.category_id)}</td>
+            <td>${Number(p.price).toFixed(0)} ₴</td>
+            <td>${p.sale_active ? `<span class="badge-mini">${Number(p.sale_price ?? 0).toFixed(0)} ₴</span>` : '—'}</td>
+            <td>${p.stock}</td>
+            <td><input type="checkbox" data-quick="in_stock" ${p.in_stock ? 'checked' : ''} /></td>
+            <td><input type="checkbox" data-quick="published" ${p.published ? 'checked' : ''} /></td>
+            <td class="row-actions">
+              <button type="button" data-action="edit">Редагувати</button>
+              <button type="button" data-action="delete" class="danger">Видалити</button>
+            </td>
+          </tr>
+        `;
+      })
+      .join('');
+
+    // швидкі перемикачі наявність/публікація прямо в таблиці
+    productsTbody.querySelectorAll<HTMLInputElement>('[data-quick]').forEach((input) => {
+      input.addEventListener('change', async () => {
+        const tr = input.closest('tr');
+        const id = tr?.dataset.id;
+        const field = input.dataset.quick;
+        if (!id || !field) return;
+        input.disabled = true;
+        try {
+          await saveProduct({ id, [field]: input.checked });
+          const cached = productsCache.find((p) => p.id === id);
+          if (cached) (cached as unknown as Record<string, unknown>)[field] = input.checked;
+        } catch {
+          input.checked = !input.checked;
+        } finally {
+          input.disabled = false;
+        }
+      });
+    });
+
+    productsTbody.querySelectorAll<HTMLButtonElement>('[data-action="edit"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.closest('tr')?.dataset.id;
+        const product = products.find((p) => p.id === id);
+        if (product) openProductDialog(product);
+      });
+    });
+
+    productsTbody.querySelectorAll<HTMLButtonElement>('[data-action="delete"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.closest('tr')?.dataset.id;
+        if (!id) return;
+        if (!confirm('Видалити товар?')) return;
+        await deleteProduct(id);
+        await reloadProducts();
+      });
+    });
+  }
+
+  function openProductDialog(product?: ProductRow) {
+    if (!productForm || !productDialog) return;
+    hideDialogError(productDialogError);
+    resetForm(productForm);
+    populateCategorySelect();
+
+    if (productDialogTitle) productDialogTitle.textContent = product ? 'Редагувати товар' : 'Новий товар';
+
+    if (product) {
+      fillForm(productForm, product as unknown as Record<string, unknown>);
+    } else {
+      const inStockInput = productForm.elements.namedItem('in_stock') as HTMLInputElement | null;
+      if (inStockInput) inStockInput.checked = true;
+      const publishedInput = productForm.elements.namedItem('published') as HTMLInputElement | null;
+      if (publishedInput) publishedInput.checked = true;
+    }
+
+    if (productImageStatus) productImageStatus.textContent = '';
+    renderImagePreviews();
+
+    productDialog.showModal();
+  }
+
+  document.getElementById('add-product-btn')?.addEventListener('click', () => openProductDialog());
+  document.getElementById('product-cancel')?.addEventListener('click', () => productDialog?.close());
+
+  productForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!productForm) return;
+    hideDialogError(productDialogError);
+    const payload = collectPayload(productForm, productFieldTypes);
+    if (!payload.category_id) payload.category_id = null;
+
+    try {
+      await saveProduct(payload);
+      productDialog?.close();
+      await reloadProducts();
+    } catch (err) {
+      showDialogError(productDialogError, err instanceof Error ? err.message : 'Помилка збереження');
+    }
+  });
+
+  // ---------- КАТЕГОРІЇ ----------
+
+  const categoryDialog = document.getElementById('category-dialog') as HTMLDialogElement | null;
+  const categoryForm = document.getElementById('category-form') as HTMLFormElement | null;
+  const categoryDialogTitle = document.getElementById('category-dialog-title');
+  const categoryDialogError = document.getElementById('category-dialog-error');
+  const categoriesTbody = document.getElementById('categories-tbody');
+
+  const categoryFieldTypes: Record<string, FieldType> = {
+    slug: 'text',
+    name_ua: 'text',
+    name_ru: 'text',
+    sort_order: 'number',
+  };
+
+  async function reloadCategories() {
+    categoriesCache = await listAllCategories();
+    populateCategorySelect();
+    populateProductFilterCategory();
+    renderProductsTable();
+    if (!categoriesTbody) return;
+
+    categoriesTbody.innerHTML = categoriesCache
+      .map(
+        (c) => `
+          <tr data-id="${c.id}">
+            <td>${c.name_ua}</td>
+            <td>${c.name_ru}</td>
+            <td>${c.slug}</td>
+            <td>${c.sort_order}</td>
+            <td class="row-actions">
+              <button type="button" data-action="edit">Редагувати</button>
+              <button type="button" data-action="delete" class="danger">Видалити</button>
+            </td>
+          </tr>
+        `
+      )
+      .join('');
+
+    categoriesTbody.querySelectorAll<HTMLButtonElement>('[data-action="edit"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.closest('tr')?.dataset.id;
+        const category = categoriesCache.find((c) => c.id === id);
+        if (category) openCategoryDialog(category);
+      });
+    });
+
+    categoriesTbody.querySelectorAll<HTMLButtonElement>('[data-action="delete"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.closest('tr')?.dataset.id;
+        if (!id) return;
+        if (!confirm('Видалити категорію? Товари в ній залишаться, але без категорії.')) return;
+        await deleteCategory(id);
+        await Promise.all([reloadCategories(), reloadProducts()]);
+      });
+    });
+  }
+
+  function openCategoryDialog(category?: CategoryRow) {
+    if (!categoryForm || !categoryDialog) return;
+    hideDialogError(categoryDialogError);
+    resetForm(categoryForm);
+    if (categoryDialogTitle) categoryDialogTitle.textContent = category ? 'Редагувати категорію' : 'Нова категорія';
+    if (category) fillForm(categoryForm, category as unknown as Record<string, unknown>);
+    categoryDialog.showModal();
+  }
+
+  document.getElementById('add-category-btn')?.addEventListener('click', () => openCategoryDialog());
+  document.getElementById('category-cancel')?.addEventListener('click', () => categoryDialog?.close());
+
+  categoryForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!categoryForm) return;
+    hideDialogError(categoryDialogError);
+    const payload = collectPayload(categoryForm, categoryFieldTypes);
+
+    try {
+      await saveCategory(payload);
+      categoryDialog?.close();
+      await Promise.all([reloadCategories(), reloadProducts()]);
+    } catch (err) {
+      showDialogError(categoryDialogError, err instanceof Error ? err.message : 'Помилка збереження');
+    }
+  });
+
+  // ---------- БЛОГ ----------
+
+  const blogDialog = document.getElementById('blog-dialog') as HTMLDialogElement | null;
+  const blogForm = document.getElementById('blog-form') as HTMLFormElement | null;
+  const blogDialogTitle = document.getElementById('blog-dialog-title');
+  const blogDialogError = document.getElementById('blog-dialog-error');
+  const blogTbody = document.getElementById('blog-tbody');
+
+  const blogFieldTypes: Record<string, FieldType> = {
+    slug: 'text',
+    cover_image: 'text',
+    title_ua: 'text',
+    title_ru: 'text',
+    excerpt_ua: 'text',
+    excerpt_ru: 'text',
+    content_ua: 'text',
+    content_ru: 'text',
+    seo_title_ua: 'text',
+    seo_title_ru: 'text',
+    seo_description_ua: 'text',
+    seo_description_ru: 'text',
+    published: 'checkbox',
+  };
+
+  async function reloadBlog() {
+    if (!blogTbody) return;
+    const posts = await listAllBlogPosts();
+
+    blogTbody.innerHTML = posts
+      .map(
+        (post) => `
+          <tr data-id="${post.id}">
+            <td>${post.title_ua}</td>
+            <td>${post.slug}</td>
+            <td>${post.published ? 'Так' : 'Ні'}</td>
+            <td class="row-actions">
+              <button type="button" data-action="edit">Редагувати</button>
+              <button type="button" data-action="delete" class="danger">Видалити</button>
+            </td>
+          </tr>
+        `
+      )
+      .join('');
+
+    blogTbody.querySelectorAll<HTMLButtonElement>('[data-action="edit"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.closest('tr')?.dataset.id;
+        const post = posts.find((p) => p.id === id);
+        if (post) openBlogDialog(post);
+      });
+    });
+
+    blogTbody.querySelectorAll<HTMLButtonElement>('[data-action="delete"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.closest('tr')?.dataset.id;
+        if (!id) return;
+        if (!confirm('Видалити пост?')) return;
+        await deleteBlogPost(id);
+        await reloadBlog();
+      });
+    });
+  }
+
+  function openBlogDialog(post?: BlogPostRow) {
+    if (!blogForm || !blogDialog) return;
+    hideDialogError(blogDialogError);
+    resetForm(blogForm);
+    if (blogDialogTitle) blogDialogTitle.textContent = post ? 'Редагувати пост' : 'Новий пост';
+    if (post) fillForm(blogForm, post as unknown as Record<string, unknown>);
+    blogDialog.showModal();
+  }
+
+  document.getElementById('add-blog-btn')?.addEventListener('click', () => openBlogDialog());
+  document.getElementById('blog-cancel')?.addEventListener('click', () => blogDialog?.close());
+
+  blogForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!blogForm) return;
+    hideDialogError(blogDialogError);
+    const payload = collectPayload(blogForm, blogFieldTypes);
+    if (payload.published && !('published_at' in payload)) {
+      payload.published_at = new Date().toISOString();
+    }
+
+    try {
+      await saveBlogPost(payload);
+      blogDialog?.close();
+      await reloadBlog();
+    } catch (err) {
+      showDialogError(blogDialogError, err instanceof Error ? err.message : 'Помилка збереження');
+    }
+  });
+
+  init();
+</script>
