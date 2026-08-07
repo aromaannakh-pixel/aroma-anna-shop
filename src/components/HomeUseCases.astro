@@ -360,7 +360,8 @@ const cases = [
     const track = carousel.querySelector('[data-track]') as HTMLElement | null;
 
     if (track) {
-    const slides = Array.from(track.children) as HTMLElement[];
+    const trackEl: HTMLElement = track;
+    const slides = Array.from(trackEl.children) as HTMLElement[];
     const prevBtn = carousel.querySelector('[data-prev]');
     const nextBtn = carousel.querySelector('[data-next]');
     const dotsWrap = document.querySelector('[data-dots]');
@@ -377,8 +378,8 @@ const cases = [
     function scrollToIndex(i: number, smooth = true) {
       index = (i + slides.length) % slides.length;
       const slide = slides[index];
-      const offset = slide.offsetLeft - (track.clientWidth - slide.clientWidth) / 2;
-      track.scrollTo({ left: offset, behavior: smooth ? 'smooth' : 'auto' });
+      const offset = slide.offsetLeft - (trackEl.clientWidth - slide.clientWidth) / 2;
+      trackEl.scrollTo({ left: offset, behavior: smooth ? 'smooth' : 'auto' });
       updateActive();
     }
 
@@ -428,10 +429,10 @@ const cases = [
     carousel.addEventListener('touchstart', stopAutoplay, { passive: true });
 
     let scrollTimeout: number | undefined;
-    track.addEventListener('scroll', () => {
+    trackEl.addEventListener('scroll', () => {
       window.clearTimeout(scrollTimeout);
       scrollTimeout = window.setTimeout(() => {
-        const trackCenter = track.scrollLeft + track.clientWidth / 2;
+        const trackCenter = trackEl.scrollLeft + trackEl.clientWidth / 2;
         let closest = 0;
         let closestDist = Infinity;
         slides.forEach((s, i) => {
