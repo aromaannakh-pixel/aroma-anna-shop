@@ -130,13 +130,41 @@ const c = dict.checkout;
     margin: 0 0 14px;
   }
 
-  .summary-item {
+  :global(.summary-item) {
     display: flex;
-    justify-content: space-between;
+    align-items: center;
     gap: 10px;
     font-size: 14px;
     padding-block: 8px;
     border-bottom: 1px solid var(--color-border);
+  }
+
+  :global(.summary-item-thumb) {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--color-accent-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  :global(.summary-item-thumb img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  :global(.summary-item-name) {
+    flex: 1;
+  }
+
+  :global(.summary-item-price) {
+    white-space: nowrap;
+    font-weight: 600;
   }
 
   .summary-total-row {
@@ -233,7 +261,8 @@ const c = dict.checkout;
     itemsEl!.innerHTML = cart
       .map((item) => {
         const name = lang === 'ua' ? item.nameUa : item.nameRu;
-        return `<div class="summary-item"><span>${name} × ${item.quantity}</span><span>${formatPrice(item.unitPrice * item.quantity, lang)}</span></div>`;
+        const thumb = item.image ? `<img src="${item.image}" alt="">` : '🌿';
+        return `<div class="summary-item"><div class="summary-item-thumb">${thumb}</div><span class="summary-item-name">${name} × ${item.quantity}</span><span class="summary-item-price">${formatPrice(item.unitPrice * item.quantity, lang)}</span></div>`;
       })
       .join('');
     totalEl!.textContent = formatPrice(getCartTotal(), lang);

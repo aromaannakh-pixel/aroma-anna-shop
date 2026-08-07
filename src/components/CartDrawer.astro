@@ -109,13 +109,13 @@ const dict = getDictionary(lang);
     padding: 12px 20px;
   }
 
-  .cart-empty {
+  :global(.cart-empty) {
     color: var(--color-text-muted);
     text-align: center;
     padding-block: 40px;
   }
 
-  .cart-item {
+  :global(.cart-item) {
     display: grid;
     grid-template-columns: 56px 1fr auto;
     gap: 12px;
@@ -123,9 +123,10 @@ const dict = getDictionary(lang);
     border-bottom: 1px solid var(--color-border);
   }
 
-  .cart-item-thumb {
+  :global(.cart-item-thumb) {
     width: 56px;
     height: 56px;
+    flex-shrink: 0;
     border-radius: 8px;
     overflow: hidden;
     background: var(--color-accent-soft);
@@ -135,24 +136,24 @@ const dict = getDictionary(lang);
     font-size: 24px;
   }
 
-  .cart-item-thumb img {
+  :global(.cart-item-thumb img) {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
 
-  .cart-item-name {
+  :global(.cart-item-name) {
     font-size: 14px;
     margin: 0 0 6px;
   }
 
-  .cart-item-qty {
+  :global(.cart-item-qty) {
     display: flex;
     align-items: center;
     gap: 6px;
   }
 
-  .qty-btn {
+  :global(.qty-btn) {
     width: 24px;
     height: 24px;
     border-radius: 6px;
@@ -163,13 +164,13 @@ const dict = getDictionary(lang);
     padding: 0;
   }
 
-  .cart-item-qty span {
+  :global(.cart-item-qty span) {
     min-width: 20px;
     text-align: center;
     font-size: 14px;
   }
 
-  .cart-item-price {
+  :global(.cart-item-price) {
     text-align: right;
     font-size: 14px;
     font-weight: 600;
@@ -179,7 +180,7 @@ const dict = getDictionary(lang);
     gap: 6px;
   }
 
-  .cart-item-remove {
+  :global(.cart-item-remove) {
     background: none;
     border: none;
     color: var(--color-text-muted);
