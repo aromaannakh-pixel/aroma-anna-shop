@@ -357,22 +357,24 @@ const cases = [
   const carousel = document.querySelector('[data-carousel]');
 
   if (carousel) {
-    const track = carousel.querySelector('[data-track]');
-    const slides = Array.from(track.children);
+    const track = carousel.querySelector('[data-track]') as HTMLElement | null;
+
+    if (track) {
+    const slides = Array.from(track.children) as HTMLElement[];
     const prevBtn = carousel.querySelector('[data-prev]');
     const nextBtn = carousel.querySelector('[data-next]');
     const dotsWrap = document.querySelector('[data-dots]');
     const dots = dotsWrap ? Array.from(dotsWrap.children) : [];
 
     let index = 0;
-    let autoplayTimer = null;
+    let autoplayTimer: number | null = null;
 
     function updateActive() {
       dots.forEach((d, i) => d.classList.toggle('active', i === index));
       slides.forEach((s, i) => s.classList.toggle('is-active', i === index));
     }
 
-    function scrollToIndex(i, smooth = true) {
+    function scrollToIndex(i: number, smooth = true) {
       index = (i + slides.length) % slides.length;
       const slide = slides[index];
       const offset = slide.offsetLeft - (track.clientWidth - slide.clientWidth) / 2;
@@ -425,7 +427,7 @@ const cases = [
     carousel.addEventListener('mouseleave', startAutoplay);
     carousel.addEventListener('touchstart', stopAutoplay, { passive: true });
 
-    let scrollTimeout;
+    let scrollTimeout: number | undefined;
     track.addEventListener('scroll', () => {
       window.clearTimeout(scrollTimeout);
       scrollTimeout = window.setTimeout(() => {
@@ -447,5 +449,6 @@ const cases = [
 
     updateActive();
     startAutoplay();
+    }
   }
 </script>

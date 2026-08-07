@@ -248,7 +248,7 @@ const { categories } = await fetchCatalogData();
 </style>
 
 <script>
-  const incenseVideo = document.getElementById('incense-video');
+  const incenseVideo = document.getElementById('incense-video') as HTMLVideoElement | null;
   if (incenseVideo) {
     const setSlow = () => {
       incenseVideo.playbackRate = 0.5;
