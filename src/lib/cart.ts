@@ -2,6 +2,11 @@
 // і в CartDrawer (перегляд/зміна кількості). Ціна фіксується в момент додавання лише
 // для відображення в кошику; фінальну ціну для замовлення завжди перевіряє
 // Netlify Function за даними з бази (клієнту не довіряємо).
+//
+// Кошик прив'язаний до користувача: ключ у localStorage включає user.id з Supabase
+// auth, тож у різних акаунтів (і в гостя) — окремі кошики в одному браузері.
+
+import { supabase } from './supabase';
 
 export interface CartItem {
   productId: string;
@@ -13,13 +18,34 @@ export interface CartItem {
   quantity: number;
 }
 
-const STORAGE_KEY = 'aroma-anna-cart';
+const STORAGE_PREFIX = 'aroma-anna-cart';
 export const CART_UPDATED_EVENT = 'cart:updated';
+
+let activeKey = `${STORAGE_PREFIX}:guest`;
+
+function setActiveKey(userId: string | null | undefined) {
+  const newKey = `${STORAGE_PREFIX}:${userId ?? 'guest'}`;
+  if (newKey !== activeKey) {
+    activeKey = newKey;
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT));
+    }
+  }
+}
+
+if (typeof window !== 'undefined') {
+  supabase.auth.getSession().then(({ data }) => {
+    setActiveKey(data.session?.user?.id);
+  });
+  supabase.auth.onAuthStateChange((_event, session) => {
+    setActiveKey(session?.user?.id);
+  });
+}
 
 function readCart(): CartItem[] {
   if (typeof localStorage === 'undefined') return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(activeKey);
     return raw ? (JSON.parse(raw) as CartItem[]) : [];
   } catch {
     return [];
@@ -27,7 +53,7 @@ function readCart(): CartItem[] {
 }
 
 function writeCart(items: CartItem[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  localStorage.setItem(activeKey, JSON.stringify(items));
   window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT, { detail: { items } }));
 }
 
