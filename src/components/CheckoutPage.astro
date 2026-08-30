@@ -225,7 +225,7 @@ const c = dict.checkout;
 </style>
 
 <script>
-  import { getCart, getCartTotal, clearCart } from '@/lib/cart';
+  import { getCart, getCartTotal, clearCart, cartReady } from '@/lib/cart';
   import { formatPrice } from '@/lib/format';
   import { supabase } from '@/lib/supabase';
   import type { Locale } from '@/i18n/config';
@@ -252,6 +252,7 @@ const c = dict.checkout;
     addressField.style.display = deliverySelect.value === 'pickup' ? 'none' : 'flex';
   }
 
+  await cartReady();
   const cart = getCart();
 
   if (cart.length === 0) {

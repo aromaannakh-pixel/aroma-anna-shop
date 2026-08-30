@@ -33,13 +33,28 @@ function setActiveKey(userId: string | null | undefined) {
   }
 }
 
+let resolveReady: () => void = () => {};
+const readyPromise = new Promise<void>((resolve) => {
+  resolveReady = resolve;
+});
+
+// Дочекатись, поки визначиться, який кошик (гостя чи конкретного user.id) активний —
+// щоб уникнути стану, коли сторінка встигає прочитати кошик до того, як Supabase
+// віддасть поточну сесію (тоді читається порожній "гостьовий" кошик).
+export function cartReady(): Promise<void> {
+  return readyPromise;
+}
+
 if (typeof window !== 'undefined') {
   supabase.auth.getSession().then(({ data }) => {
     setActiveKey(data.session?.user?.id);
+    resolveReady();
   });
   supabase.auth.onAuthStateChange((_event, session) => {
     setActiveKey(session?.user?.id);
   });
+} else {
+  resolveReady();
 }
 
 function readCart(): CartItem[] {
