@@ -62,9 +62,17 @@ const c = dict.checkout;
           {c.city}
           <input type="text" name="city" />
         </label>
+        <label id="branch-field">
+          {c.branch}
+          <input type="text" name="branch" placeholder="Наприклад: 65" />
+        </label>
         <label id="address-field">
           {c.address}
           <input type="text" name="address" />
+        </label>
+        <label id="postal-field">
+          {c.postalCode}
+          <input type="text" name="postalCode" placeholder="Наприклад: 61000" />
         </label>
         <label>
           {c.comment}
@@ -243,13 +251,18 @@ const c = dict.checkout;
   const errorEl = document.getElementById('checkout-error');
   const submitBtn = document.getElementById('checkout-submit') as HTMLButtonElement | null;
   const deliverySelect = document.getElementById('delivery-method') as HTMLSelectElement | null;
+  const branchField = document.getElementById('branch-field');
   const addressField = document.getElementById('address-field');
+  const postalField = document.getElementById('postal-field');
 
   const successBodyTemplate = successBodyEl?.dataset.template || '';
 
   function toggleAddressField() {
-    if (!deliverySelect || !addressField) return;
-    addressField.style.display = deliverySelect.value === 'pickup' ? 'none' : 'flex';
+    if (!deliverySelect) return;
+    const method = deliverySelect.value;
+    if (branchField) branchField.style.display = method === 'nova_poshta' ? 'flex' : 'none';
+    if (addressField) addressField.style.display = method === 'ukrposhta' ? 'flex' : 'none';
+    if (postalField) postalField.style.display = method === 'ukrposhta' ? 'flex' : 'none';
   }
 
   await cartReady();
@@ -278,13 +291,25 @@ const c = dict.checkout;
       if (submitBtn) submitBtn.disabled = true;
 
       const formData = new FormData(form);
+      const deliveryMethod = String(formData.get('deliveryMethod') || 'nova_poshta');
+
+      let address: string | undefined;
+      if (deliveryMethod === 'nova_poshta') {
+        const branch = String(formData.get('branch') || '').trim();
+        address = branch ? `Відділення №${branch}` : undefined;
+      } else if (deliveryMethod === 'ukrposhta') {
+        const street = String(formData.get('address') || '').trim();
+        const postalCode = String(formData.get('postalCode') || '').trim();
+        address = [street, postalCode ? `індекс ${postalCode}` : ''].filter(Boolean).join(', ') || undefined;
+      }
+
       const customer = {
         name: String(formData.get('name') || ''),
         phone: String(formData.get('phone') || ''),
         email: String(formData.get('email') || '') || undefined,
-        deliveryMethod: String(formData.get('deliveryMethod') || 'nova_poshta'),
+        deliveryMethod,
         city: String(formData.get('city') || '') || undefined,
-        address: String(formData.get('address') || '') || undefined,
+        address,
         comment: String(formData.get('comment') || '') || undefined,
         lang,
       };
