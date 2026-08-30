@@ -37,7 +37,10 @@ const a = dict.account;
         </label>
         <label>
           {a.passwordLabel}
-          <input type="password" name="password" required minlength="6" />
+          <div class="password-field">
+            <input type="password" name="password" required minlength="6" />
+            <button type="button" class="toggle-password" data-show-text={a.showPassword} data-hide-text={a.hidePassword}>{a.showPassword}</button>
+          </div>
         </label>
         <p class="auth-error" data-for="login" hidden></p>
         <button type="submit" class="btn">{a.loginButton}</button>
@@ -54,18 +57,15 @@ const a = dict.account;
         </label>
         <label>
           {a.passwordLabel}
-          <input type="password" name="password" required minlength="6" />
+          <div class="password-field">
+            <input type="password" name="password" required minlength="6" />
+            <button type="button" class="toggle-password" data-show-text={a.showPassword} data-hide-text={a.hidePassword}>{a.showPassword}</button>
+          </div>
         </label>
         <p class="auth-error" data-for="signup" hidden></p>
         <p class="auth-info" id="signup-confirm-message" hidden>{a.confirmEmailMessage}</p>
         <button type="submit" class="btn">{a.signupButton}</button>
       </form>
-
-      <div class="auth-divider"><span>{a.orDivider}</span></div>
-
-      <button type="button" id="google-btn" class="btn btn-outline google-btn">
-        {a.googleButton}
-      </button>
     </div>
 
     <div id="account-dashboard" class="dashboard" hidden>
@@ -179,6 +179,31 @@ const a = dict.account;
     font-size: 15px;
   }
 
+  .password-field {
+    position: relative;
+    display: flex;
+  }
+
+  .password-field input {
+    flex: 1;
+    width: 100%;
+    padding-right: 84px;
+  }
+
+  .toggle-password {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--color-accent-dark);
+    font-size: 12px;
+    text-decoration: underline;
+    padding: 4px 6px;
+    cursor: pointer;
+  }
+
   .auth-error {
     background: #fbe7e7;
     color: var(--color-sale);
@@ -193,27 +218,6 @@ const a = dict.account;
     padding: 8px 10px;
     border-radius: var(--radius);
     font-size: 13px;
-  }
-
-  .auth-divider {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-block: 20px;
-    color: var(--color-text-muted);
-    font-size: 13px;
-  }
-
-  .auth-divider::before,
-  .auth-divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--color-border);
-  }
-
-  .google-btn {
-    width: 100%;
   }
 
   .dashboard {
@@ -470,7 +474,16 @@ const a = dict.account;
   const dashboardEl = document.getElementById('account-dashboard');
   const greetingEl = document.getElementById('account-greeting');
   const logoutBtn = document.getElementById('logout-btn');
-  const googleBtn = document.getElementById('google-btn');
+
+  document.querySelectorAll<HTMLButtonElement>('.toggle-password').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const input = btn.previousElementSibling as HTMLInputElement | null;
+      if (!input) return;
+      const nowShowing = input.type === 'password';
+      input.type = nowShowing ? 'text' : 'password';
+      btn.textContent = nowShowing ? btn.dataset.hideText || '' : btn.dataset.showText || '';
+    });
+  });
 
   const tabBtns = document.querySelectorAll<HTMLButtonElement>('.tab-btn');
   const loginForm = document.getElementById('login-form') as HTMLFormElement | null;
@@ -562,13 +575,6 @@ const a = dict.account;
       const msg = document.getElementById('signup-confirm-message');
       msg?.removeAttribute('hidden');
     }
-  });
-
-  googleBtn?.addEventListener('click', async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin + window.location.pathname },
-    });
   });
 
   logoutBtn?.addEventListener('click', async () => {

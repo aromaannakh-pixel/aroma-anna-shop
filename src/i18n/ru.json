@@ -81,6 +81,8 @@
     "signupTab": "Регистрация",
     "emailLabel": "Email",
     "passwordLabel": "Пароль",
+    "showPassword": "Показать",
+    "hidePassword": "Скрыть",
     "fullNameLabel": "Имя",
     "loginButton": "Войти",
     "signupButton": "Зарегистрироваться",
