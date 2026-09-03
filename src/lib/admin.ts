@@ -1,6 +1,9 @@
 import { supabase } from './supabase';
 import type { CategoryRow, ProductRow } from './catalog';
 import type { BlogPostRow } from './blog';
+import { mapSiteSettingsRow, type SiteSettings } from './settings';
+
+export type { SiteSettings };
 
 export interface CurrentAdmin {
   userId: string;
@@ -147,5 +150,27 @@ export async function saveBlogPost(payload: Record<string, unknown> & { id?: str
 
 export async function deleteBlogPost(id: string): Promise<void> {
   const { error } = await supabase.from('blog_posts').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ---------- Реквізити продавця ----------
+
+export async function fetchSiteSettingsAdmin(): Promise<SiteSettings> {
+  const { data, error } = await supabase.from('site_settings').select('*').eq('id', 1).single();
+  if (error) throw error;
+  return mapSiteSettingsRow(data);
+}
+
+export async function saveSiteSettings(settings: SiteSettings): Promise<void> {
+  const { error } = await supabase
+    .from('site_settings')
+    .update({
+      seller_name: settings.sellerName,
+      rnokpp: settings.rnokpp,
+      address: settings.address,
+      phone: settings.phone,
+      email: settings.email,
+    })
+    .eq('id', 1);
   if (error) throw error;
 }

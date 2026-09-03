@@ -1,15 +1,18 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import { type Locale } from '@/i18n/config';
-import { legalContent, type LegalDoc } from '@/content/legal';
+import { buildLegalContent, type LegalDoc } from '@/content/legal';
+import { fetchSiteSettings } from '@/lib/settings';
 
 interface Props {
   lang: Locale;
-  doc: 'oferta' | 'privacy' | 'returns' | 'contacts';
+  doc: 'oferta' | 'privacy' | 'returns' | 'delivery' | 'contacts';
   path: string;
 }
 
 const { lang, doc, path } = Astro.props;
+const seller = await fetchSiteSettings();
+const legalContent = buildLegalContent(seller);
 const content: LegalDoc = legalContent[lang][doc];
 ---
 

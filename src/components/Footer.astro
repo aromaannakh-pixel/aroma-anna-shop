@@ -15,6 +15,7 @@ const year = new Date().getFullYear();
     <span>{dict.siteName} · © {year}. {dict.footer.rights}.</span>
     <nav class="footer-links" aria-label={dict.footer.contacts}>
       <a href={localizedPath(lang, '/contacts')}>{dict.footer.contacts}</a>
+      <a href={localizedPath(lang, '/delivery')}>{dict.footer.delivery}</a>
       <a href={localizedPath(lang, '/oferta')}>{dict.footer.oferta}</a>
       <a href={localizedPath(lang, '/privacy')}>{dict.footer.privacy}</a>
       <a href={localizedPath(lang, '/returns')}>{dict.footer.returns}</a>
