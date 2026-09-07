@@ -15,6 +15,7 @@ export interface CartItem {
   nameRu: string;
   image: string | null;
   unitPrice: number;
+  stock: number;
   quantity: number;
 }
 
@@ -86,11 +87,13 @@ export function getCartTotal(): number {
 
 export function addToCart(item: Omit<CartItem, 'quantity'>, quantity = 1): void {
   const items = readCart();
+  const stock = Math.max(0, item.stock ?? 0);
   const existing = items.find((i) => i.productId === item.productId);
   if (existing) {
-    existing.quantity += quantity;
+    existing.quantity = Math.min(existing.quantity + quantity, stock || existing.quantity + quantity);
+    existing.stock = stock;
   } else {
-    items.push({ ...item, quantity });
+    items.push({ ...item, stock, quantity: Math.min(quantity, stock || quantity) });
   }
   writeCart(items);
 }
@@ -101,7 +104,7 @@ export function updateQuantity(productId: string, quantity: number): void {
     items = items.filter((i) => i.productId !== productId);
   } else {
     const existing = items.find((i) => i.productId === productId);
-    if (existing) existing.quantity = quantity;
+    if (existing) existing.quantity = existing.stock ? Math.min(quantity, existing.stock) : quantity;
   }
   writeCart(items);
 }

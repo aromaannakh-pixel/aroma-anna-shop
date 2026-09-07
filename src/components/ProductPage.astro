@@ -90,7 +90,7 @@ const path = `/product/${product.slug}`;
       <div class="add-to-cart-row">
         <label class="qty-label">
           {dict.common.quantity}
-          <input id="qty-input" type="number" min="1" value="1" />
+          <input id="qty-input" type="number" min="1" max={product.stock} value="1" />
         </label>
         <button
           id="add-to-cart-btn"
@@ -103,6 +103,7 @@ const path = `/product/${product.slug}`;
           data-name-ru={product.name_ru}
           data-image={images[0] ?? ''}
           data-price={product.effectivePrice}
+          data-stock={product.stock}
         >
           {product.in_stock ? dict.common.addToCart : dict.common.outOfStock}
         </button>
@@ -262,7 +263,9 @@ const path = `/product/${product.slug}`;
   const qtyInput = document.getElementById('qty-input') as HTMLInputElement | null;
 
   addBtn?.addEventListener('click', () => {
-    const qty = Math.max(1, Number(qtyInput?.value) || 1);
+    const stock = Math.max(0, Number(addBtn.dataset.stock) || 0);
+    const qty = Math.min(Math.max(1, Number(qtyInput?.value) || 1), stock || 1);
+    if (qtyInput) qtyInput.value = String(qty);
     addToCart(
       {
         productId: addBtn.dataset.productId!,
@@ -271,6 +274,7 @@ const path = `/product/${product.slug}`;
         nameRu: addBtn.dataset.nameRu!,
         image: addBtn.dataset.image || null,
         unitPrice: Number(addBtn.dataset.price),
+        stock,
       },
       qty
     );

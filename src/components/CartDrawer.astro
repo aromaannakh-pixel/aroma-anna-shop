@@ -242,7 +242,7 @@ const dict = getDictionary(lang);
               <div class="cart-item-qty">
                 <button type="button" class="qty-btn" data-action="dec">−</button>
                 <span>${item.quantity}</span>
-                <button type="button" class="qty-btn" data-action="inc">+</button>
+                <button type="button" class="qty-btn" data-action="inc" ${item.stock && item.quantity >= item.stock ? 'disabled' : ''}>+</button>
               </div>
             </div>
             <div class="cart-item-price">

@@ -195,7 +195,8 @@ export const handler: Handler = async (event) => {
   }
 
   const productById = new Map((products ?? []).map((p) => [p.id, p]));
-  const unavailable: string[] = [];
+  const unavailable: { slug: string; nameUa: string; nameRu: string }[] = [];
+  const stockUpdates: { id: string; newStock: number }[] = [];
   const orderItems: {
     product_id: string;
     product_name_ua: string;
@@ -209,7 +210,16 @@ export const handler: Handler = async (event) => {
     const qty = Number(requested.quantity) || 0;
 
     if (!product || !product.published || !product.in_stock || qty <= 0) {
-      if (product) unavailable.push(product.slug);
+      if (product) unavailable.push({ slug: product.slug, nameUa: product.name_ua, nameRu: product.name_ru });
+      continue;
+    }
+
+    // Не довіряємо кількості з клієнта — перевіряємо реальний залишок на складі.
+    // Якщо просять більше, ніж є, позиція відхиляється повністю (а не обрізається
+    // мовчки), щоб покупець побачив, що товару не вистачило.
+    const availableStock = Number(product.stock) || 0;
+    if (qty > availableStock) {
+      unavailable.push({ slug: product.slug, nameUa: product.name_ua, nameRu: product.name_ru });
       continue;
     }
 
@@ -223,6 +233,7 @@ export const handler: Handler = async (event) => {
       unit_price: unitPrice,
       quantity: qty,
     });
+    stockUpdates.push({ id: product.id, newStock: availableStock - qty });
   }
 
   if (orderItems.length === 0) {
@@ -261,6 +272,17 @@ export const handler: Handler = async (event) => {
     return jsonResponse(500, { success: false, error: 'order_items_insert_failed' });
   }
 
+  // Списуємо зі складу те, що щойно замовили, щоб наступний покупець не міг
+  // купити те, чого вже немає. Якщо оновлення залишку раптом не пройде —
+  // замовлення все одно вважається успішним (товар уже зарезервовано в базі),
+  // просто залишок доведеться поправити вручну в адмінці.
+  for (const update of stockUpdates) {
+    await supabase
+      .from('products')
+      .update({ stock: update.newStock, in_stock: update.newStock > 0 })
+      .eq('id', update.id);
+  }
+
   const itemsText = orderItems
     .map((i) => `• ${i.product_name_ua} × ${i.quantity} — ${(i.unit_price * i.quantity).toFixed(0)} ₴`)
     .join('\n');
@@ -277,7 +299,7 @@ export const handler: Handler = async (event) => {
     itemsText,
     '',
     `Разом: ${total.toFixed(0)} ₴`,
-    unavailable.length ? `\n⚠️ Недоступні позиції (пропущено): ${unavailable.join(', ')}` : null,
+    unavailable.length ? `\n⚠️ Недоступні позиції (пропущено): ${unavailable.map((u) => u.nameUa).join(', ')}` : null,
   ]
     .filter(Boolean)
     .join('\n');

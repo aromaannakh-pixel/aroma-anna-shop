@@ -24,6 +24,7 @@ const c = dict.checkout;
     <div id="checkout-success" class="success-state" hidden>
       <p class="success-title">{c.successTitle}</p>
       <p id="checkout-success-body" class="success-body" data-template={c.successBody}></p>
+      <p id="checkout-unavailable" class="unavailable-note" hidden data-prefix={c.errorUnavailable}></p>
       <a class="btn" href={localizedPath(lang, '/catalog')}>{c.backToCatalog}</a>
     </div>
 
@@ -113,6 +114,17 @@ const c = dict.checkout;
   .success-body {
     color: var(--color-text-muted);
     margin-bottom: 20px;
+  }
+
+  .unavailable-note {
+    background: #fbf3e0;
+    color: #8a5a00;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    max-width: 480px;
+    margin: 0 auto 20px;
+    text-align: left;
   }
 
   .checkout-grid {
@@ -244,6 +256,7 @@ const c = dict.checkout;
   const emptyEl = document.getElementById('checkout-empty');
   const successEl = document.getElementById('checkout-success');
   const successBodyEl = document.getElementById('checkout-success-body');
+  const unavailableEl = document.getElementById('checkout-unavailable');
   const contentEl = document.getElementById('checkout-content');
   const itemsEl = document.getElementById('checkout-items');
   const totalEl = document.getElementById('checkout-total');
@@ -336,6 +349,16 @@ const c = dict.checkout;
           successEl?.removeAttribute('hidden');
           if (successBodyEl) {
             successBodyEl.textContent = successBodyTemplate.replace('{n}', String(result.orderNumber));
+          }
+          if (unavailableEl) {
+            const list = (result.unavailable || []) as { nameUa: string; nameRu: string }[];
+            if (list.length > 0) {
+              const names = list.map((u) => (lang === 'ua' ? u.nameUa : u.nameRu)).join(', ');
+              unavailableEl.textContent = `${unavailableEl.dataset.prefix || ''} ${names}`;
+              unavailableEl.removeAttribute('hidden');
+            } else {
+              unavailableEl.setAttribute('hidden', 'true');
+            }
           }
         } else {
           if (errorEl) {
