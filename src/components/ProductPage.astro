@@ -108,6 +108,7 @@ const path = `/product/${product.slug}`;
           {product.in_stock ? dict.common.addToCart : dict.common.outOfStock}
         </button>
       </div>
+      <p id="qty-warning" class="qty-warning" data-template={dict.common.notEnoughStock} hidden></p>
 
       {
         description && (
@@ -214,7 +215,17 @@ const path = `/product/${product.slug}`;
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-bottom: 32px;
+    margin-bottom: 12px;
+  }
+
+  .qty-warning {
+    color: var(--color-sale);
+    font-size: 13px;
+    margin: -6px 0 24px;
+  }
+
+  .qty-warning[hidden] {
+    display: none;
   }
 
   .qty-label {
@@ -261,11 +272,40 @@ const path = `/product/${product.slug}`;
 
   const addBtn = document.getElementById('add-to-cart-btn') as HTMLButtonElement | null;
   const qtyInput = document.getElementById('qty-input') as HTMLInputElement | null;
+  const qtyWarning = document.getElementById('qty-warning');
+  const warningTemplate = qtyWarning?.dataset.template || '';
+
+  function showStockWarning(stock: number) {
+    if (!qtyWarning) return;
+    qtyWarning.textContent = warningTemplate.replace('{n}', String(stock));
+    qtyWarning.removeAttribute('hidden');
+  }
+
+  function hideStockWarning() {
+    qtyWarning?.setAttribute('hidden', 'true');
+  }
+
+  function clampQty(showWarning: boolean): number {
+    const stock = Math.max(0, Number(addBtn?.dataset.stock) || 0);
+    const requested = Math.max(1, Number(qtyInput?.value) || 1);
+    const qty = Math.min(requested, stock || requested);
+
+    if (requested > stock && stock > 0) {
+      if (qtyInput) qtyInput.value = String(qty);
+      if (showWarning) showStockWarning(stock);
+    } else {
+      hideStockWarning();
+    }
+
+    return qty;
+  }
+
+  qtyInput?.addEventListener('input', () => clampQty(true));
+  qtyInput?.addEventListener('change', () => clampQty(true));
 
   addBtn?.addEventListener('click', () => {
     const stock = Math.max(0, Number(addBtn.dataset.stock) || 0);
-    const qty = Math.min(Math.max(1, Number(qtyInput?.value) || 1), stock || 1);
-    if (qtyInput) qtyInput.value = String(qty);
+    const qty = clampQty(true);
     addToCart(
       {
         productId: addBtn.dataset.productId!,

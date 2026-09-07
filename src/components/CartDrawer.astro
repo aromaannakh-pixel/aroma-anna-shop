@@ -16,6 +16,7 @@ const dict = getDictionary(lang);
   data-lang={lang}
   data-empty-text={dict.common.emptyCart}
   data-remove-text={dict.common.remove}
+  data-not-enough-stock={dict.common.notEnoughStock}
 >
   <div id="cart-backdrop" class="cart-backdrop"></div>
   <aside class="cart-panel" role="dialog" aria-label={dict.nav.cart}>
@@ -170,6 +171,16 @@ const dict = getDictionary(lang);
     font-size: 14px;
   }
 
+  :global(.cart-item-stock-warning) {
+    color: var(--color-sale);
+    font-size: 12px;
+    margin: 6px 0 0;
+  }
+
+  :global(.cart-item-stock-warning[hidden]) {
+    display: none;
+  }
+
   :global(.cart-item-price) {
     text-align: right;
     font-size: 14px;
@@ -223,6 +234,7 @@ const dict = getDictionary(lang);
     const lang = (drawer.dataset.lang as Locale) || 'ua';
     const emptyText = drawer.dataset.emptyText || '';
     const removeText = drawer.dataset.removeText || '';
+    const notEnoughStockTemplate = drawer.dataset.notEnoughStock || '';
 
     function render() {
       const items = getCart();
@@ -242,8 +254,9 @@ const dict = getDictionary(lang);
               <div class="cart-item-qty">
                 <button type="button" class="qty-btn" data-action="dec">−</button>
                 <span>${item.quantity}</span>
-                <button type="button" class="qty-btn" data-action="inc" ${item.stock && item.quantity >= item.stock ? 'disabled' : ''}>+</button>
+                <button type="button" class="qty-btn" data-action="inc">+</button>
               </div>
+              <p class="cart-item-stock-warning" hidden></p>
             </div>
             <div class="cart-item-price">
               <span>${formatPrice(item.unitPrice * item.quantity, lang)}</span>
@@ -252,9 +265,19 @@ const dict = getDictionary(lang);
           `;
 
           row.querySelector('[data-action="dec"]')?.addEventListener('click', () => {
+            const warningEl = row.querySelector<HTMLElement>('.cart-item-stock-warning');
+            warningEl?.setAttribute('hidden', 'true');
             updateQuantity(item.productId, item.quantity - 1);
           });
           row.querySelector('[data-action="inc"]')?.addEventListener('click', () => {
+            if (item.stock && item.quantity >= item.stock) {
+              const warningEl = row.querySelector<HTMLElement>('.cart-item-stock-warning');
+              if (warningEl) {
+                warningEl.textContent = notEnoughStockTemplate.replace('{n}', String(item.stock));
+                warningEl.removeAttribute('hidden');
+              }
+              return;
+            }
             updateQuantity(item.productId, item.quantity + 1);
           });
           row.querySelector('.cart-item-remove')?.addEventListener('click', () => {
