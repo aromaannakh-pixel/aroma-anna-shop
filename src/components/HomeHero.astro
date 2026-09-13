@@ -23,7 +23,17 @@ const h = dict.home;
       </h1>
       <p>{h.heroSubtitle}</p>
       <div class="hero-actions">
-        <a class="btn" href={localizedPath(lang, '/catalog')}>{h.shopNow}</a>
+        <a class="btn cta-organic" href={localizedPath(lang, '/catalog')}>
+          <span class="cta-label">{h.shopNow}</span>
+          <svg class="cta-fx" viewBox="0 0 180 100" preserveAspectRatio="none" aria-hidden="true">
+            <path class="cta-wisp" d="M92,6 C86,18 98,24 92,36 C86,46 94,52 90,60" />
+            <path
+              class="cta-circle"
+              d="M 12,26 C -4,46 4,70 28,74 C 70,82 150,78 168,58 C 180,44 168,22 138,20 C 90,16 20,22 12,42"
+            />
+            <circle class="cta-ember" r="3.5" />
+          </svg>
+        </a>
       </div>
     </div>
   </div>
@@ -195,38 +205,76 @@ const h = dict.home;
   .hero-actions .btn {
     position: relative;
     color: #fff;
-    padding: 14px 34px;
-    border: 1px solid rgba(255, 255, 255, 0.85);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    padding: 10px 6px;
+    transition: color 0.2s ease;
   }
 
   .hero-actions .btn::after {
     content: none;
   }
 
-  .hero-actions .btn::before {
-    content: '';
-    position: absolute;
-    inset: -6px;
-    border-radius: inherit;
-    border: 1px solid rgba(255, 255, 255, 0.55);
-    opacity: 0;
-    pointer-events: none;
-    animation: hero-cta-pulse 2.6s ease-out infinite;
-    animation-delay: 1.6s;
+  .hero-actions .btn:hover {
+    color: rgba(255, 255, 255, 0.75);
   }
 
-  @keyframes hero-cta-pulse {
+  .hero-actions .cta-label {
+    position: relative;
+    z-index: 1;
+    display: inline-block;
+    animation: hero-text-arrive 5s ease-in-out infinite;
+  }
+
+  .hero-actions .cta-fx {
+    position: absolute;
+    inset: -34px -30px -20px;
+    width: calc(100% + 60px);
+    height: calc(100% + 54px);
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .hero-actions .cta-wisp {
+    fill: none;
+    stroke: #f2e3ab;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+    filter: blur(1.2px);
+    animation: hero-wisp-up 5s ease-in-out infinite;
+  }
+
+  .hero-actions .cta-circle {
+    fill: none;
+    stroke: #f6ead0;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-dasharray: 340;
+    stroke-dashoffset: 340;
+    filter: drop-shadow(0 0 3px rgba(242, 227, 171, 0.5));
+    animation: hero-circle-draw 5s ease-in-out infinite;
+  }
+
+  .hero-actions .cta-ember {
+    fill: #f2c85b;
+    filter: drop-shadow(0 0 4px rgba(242, 200, 91, 0.9));
+    offset-path: path(
+      'M 12,26 C -4,46 4,70 28,74 C 70,82 150,78 168,58 C 180,44 168,22 138,20 C 90,16 20,22 12,42'
+    );
+    animation: hero-ember-travel 5s ease-in-out infinite;
+    opacity: 0;
+  }
+
+  @keyframes hero-wisp-up {
     0% {
-      transform: scale(1);
-      opacity: 0.55;
+      stroke-dashoffset: 40;
+      opacity: 0;
     }
-    70% {
-      transform: scale(1.14);
+    10% {
+      opacity: 0.85;
+    }
+    38% {
+      stroke-dashoffset: 0;
       opacity: 0;
     }
     100% {
@@ -234,16 +282,90 @@ const h = dict.home;
     }
   }
 
-  .hero-actions .btn:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.2);
-    border-color: #fff;
+  @keyframes hero-circle-draw {
+    0% {
+      stroke-dashoffset: 340;
+      opacity: 0;
+    }
+    38% {
+      stroke-dashoffset: 340;
+      opacity: 1;
+    }
+    68% {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes hero-ember-travel {
+    0% {
+      offset-distance: 0%;
+      opacity: 0;
+    }
+    38% {
+      offset-distance: 0%;
+      opacity: 0;
+    }
+    40% {
+      opacity: 1;
+    }
+    68% {
+      offset-distance: 100%;
+      opacity: 1;
+    }
+    74% {
+      opacity: 0;
+    }
+    100% {
+      offset-distance: 100%;
+      opacity: 0;
+    }
+  }
+
+  @keyframes hero-text-arrive {
+    0% {
+      opacity: 0.85;
+      transform: translateY(0);
+      letter-spacing: 0.1em;
+    }
+    38% {
+      opacity: 0.85;
+      transform: translateY(0);
+      letter-spacing: 0.1em;
+    }
+    60% {
+      opacity: 1;
+      transform: translateY(-2px);
+      letter-spacing: 0.16em;
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+      letter-spacing: 0.1em;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .hero-actions .btn::before {
+    .hero-actions .cta-wisp,
+    .hero-actions .cta-ember {
+      display: none;
+    }
+
+    .hero-actions .cta-circle {
       animation: none;
-      opacity: 0;
+      stroke-dashoffset: 0;
+      opacity: 0.7;
+    }
+
+    .hero-actions .cta-label {
+      animation: none;
     }
   }
 
