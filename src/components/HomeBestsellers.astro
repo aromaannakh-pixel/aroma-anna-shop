@@ -1,0 +1,283 @@
+---
+import { getDictionary, localizedPath, type Locale } from '@/i18n/config';
+import { fetchCatalogData } from '@/lib/catalog';
+import { formatPrice } from '@/lib/format';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const dict = getDictionary(lang);
+const h = dict.home;
+const { products } = await fetchCatalogData();
+
+const bestsellers = products.filter((p) => p.is_bestseller).slice(0, 4);
+---
+
+{
+  bestsellers.length > 0 && (
+    <section class="bestsellers">
+      <div class="container">
+        <span class="eyebrow">
+          <span class="line" />
+          <span class="fire" aria-hidden="true">🔥</span>
+          {h.bestsellersHeading}
+          <span class="line" />
+        </span>
+
+        <div class="grid">
+          {bestsellers.map((p) => {
+            const name = lang === 'ua' ? p.name_ua : p.name_ru;
+            const scent = lang === 'ua' ? p.short_desc_ua : p.short_desc_ru;
+            const image = p.images?.[0];
+            const href = localizedPath(lang, `/product/${p.slug}`);
+            return (
+              <div class="bs-card">
+                <a class="bs-thumb" href={href}>
+                  {image ? (
+                    <img src={image} alt={name} loading="lazy" />
+                  ) : (
+                    <div class="bs-thumb-placeholder" aria-hidden="true">🌿</div>
+                  )}
+                  {!p.in_stock && <span class="badge badge-out bs-badge">{dict.common.outOfStock}</span>}
+                  {p.in_stock && p.isOnSale && <span class="badge badge-sale bs-badge">{dict.common.sale}</span>}
+                </a>
+
+                <a class="bs-name" href={href}>
+                  {name}
+                </a>
+                {scent && <p class="bs-scent">{scent}</p>}
+
+                <div class="bs-price-row">
+                  {p.isOnSale ? (
+                    <>
+                      <span class="bs-price-old">{formatPrice(Number(p.price), lang)}</span>
+                      <span class="bs-price-sale">{formatPrice(p.effectivePrice, lang)}</span>
+                    </>
+                  ) : (
+                    <span class="bs-price">{formatPrice(p.effectivePrice, lang)}</span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  class="btn bs-add-btn"
+                  disabled={!p.in_stock}
+                  data-add-to-cart
+                  data-product-id={p.id}
+                  data-slug={p.slug}
+                  data-name-ua={p.name_ua}
+                  data-name-ru={p.name_ru}
+                  data-image={image ?? ''}
+                  data-price={p.effectivePrice}
+                  data-stock={p.stock}
+                  data-label={dict.common.addToCart}
+                  data-added-label={dict.common.addedToCart}
+                >
+                  {p.in_stock ? dict.common.addToCart : dict.common.outOfStock}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .bestsellers {
+    background: var(--color-bg);
+    padding-block: 20px 56px;
+  }
+
+  .eyebrow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-accent-dark);
+    margin-bottom: 26px;
+  }
+
+  .fire {
+    font-size: 13px;
+  }
+
+  .line {
+    width: 28px;
+    height: 1px;
+    background: var(--color-accent-dark);
+    opacity: 0.5;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+
+  .bs-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+  }
+
+  .bs-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-3px);
+  }
+
+  .bs-thumb {
+    position: relative;
+    display: block;
+    aspect-ratio: 1 / 1;
+    background: var(--color-accent-soft);
+  }
+
+  .bs-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .bs-thumb-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+  }
+
+  .bs-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+  }
+
+  .bs-name {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 12px 14px 2px;
+  }
+
+  .bs-name:hover {
+    color: var(--color-accent-dark);
+    text-decoration: none;
+  }
+
+  .bs-scent {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin: 0 14px 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .bs-price-row {
+    margin: auto 14px 10px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .bs-price,
+  .bs-price-sale {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--color-text);
+  }
+
+  .bs-price-sale {
+    color: var(--color-sale);
+  }
+
+  .bs-price-old {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    text-decoration: line-through;
+  }
+
+  .bs-add-btn {
+    margin: 0 14px 14px;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+  }
+
+  .bs-add-btn::after {
+    content: none;
+  }
+
+  .bs-add-btn:hover {
+    border-color: var(--color-accent-dark);
+    color: var(--color-accent-dark);
+  }
+
+  .bs-add-btn:disabled {
+    opacity: 0.5;
+  }
+
+  @media (max-width: 900px) {
+    .grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .bs-name {
+      font-size: 14px;
+    }
+
+    .bs-scent {
+      font-size: 12px;
+    }
+  }
+</style>
+
+<script>
+  import { addToCart } from '@/lib/cart';
+
+  document.querySelectorAll<HTMLButtonElement>('[data-add-to-cart]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const stock = Math.max(0, Number(btn.dataset.stock) || 0);
+      addToCart(
+        {
+          productId: btn.dataset.productId!,
+          slug: btn.dataset.slug!,
+          nameUa: btn.dataset.nameUa!,
+          nameRu: btn.dataset.nameRu!,
+          image: btn.dataset.image || null,
+          unitPrice: Number(btn.dataset.price),
+          stock,
+        },
+        1
+      );
+
+      const original = btn.dataset.label || btn.textContent || '';
+      btn.textContent = btn.dataset.addedLabel || original;
+      btn.disabled = true;
+      window.setTimeout(() => {
+        btn.textContent = original;
+        btn.disabled = false;
+      }, 1200);
+    });
+  });
+</script>

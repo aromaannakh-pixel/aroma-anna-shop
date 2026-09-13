@@ -31,6 +31,7 @@ export interface ProductRow {
   stock: number;
   in_stock: boolean;
   published: boolean;
+  is_bestseller: boolean;
   created_at: string;
 }
 

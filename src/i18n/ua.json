@@ -29,7 +29,8 @@
     "noProducts": "Товарів поки немає",
     "remove": "Видалити",
     "loading": "Завантаження...",
-    "emptyCart": "Кошик порожній"
+    "emptyCart": "Кошик порожній",
+    "addedToCart": "Додано ✓"
   },
   "footer": {
     "rights": "Усі права захищено",
@@ -49,7 +50,8 @@
     "exploreCatalog": "Переглянути весь каталог",
     "catalogComingSoon": "Каталог поповнюється — перші товари з'являться зовсім скоро.",
     "useCasesHeading": "Для кожного простору і моменту",
-    "useCasesSubtitle": "AromaAnna створює настрій там, де він потрібен"
+    "useCasesSubtitle": "AromaAnna створює настрій там, де він потрібен",
+    "bestsellersHeading": "Найчастіше обирають"
   },
   "checkout": {
     "title": "Оформлення замовлення",

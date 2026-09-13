@@ -81,6 +81,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <th>Stock</th>
               <th>В наявності</th>
               <th>Опубліковано</th>
+              <th>Хіт продажів</th>
               <th></th>
             </tr>
           </thead>
@@ -211,6 +212,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <label>Кількість на складі<input type="number" name="stock" min="0" step="1" required /></label>
           <label class="checkbox-label"><input type="checkbox" name="in_stock" checked /> В наявності</label>
           <label class="checkbox-label"><input type="checkbox" name="published" /> Опубліковано</label>
+          <label class="checkbox-label">
+            <input type="checkbox" name="is_bestseller" /> Хіт продажів (показувати в блоці "Найчастіше обирають" на
+            головній, макс. 4 товари)
+          </label>
         </div>
 
         <p class="dialog-error" id="product-dialog-error" hidden></p>
@@ -910,6 +915,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     stock: 'number',
     in_stock: 'checkbox',
     published: 'checkbox',
+    is_bestseller: 'checkbox',
   };
 
   // ---------- Завантаження фото товару ----------
@@ -1063,6 +1069,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <td>${p.stock}</td>
             <td><input type="checkbox" data-quick="in_stock" ${p.in_stock ? 'checked' : ''} /></td>
             <td><input type="checkbox" data-quick="published" ${p.published ? 'checked' : ''} /></td>
+            <td><input type="checkbox" data-quick="is_bestseller" ${(p as unknown as { is_bestseller?: boolean }).is_bestseller ? 'checked' : ''} /></td>
             <td class="row-actions">
               <button type="button" data-action="edit">Редагувати</button>
               <button type="button" data-action="delete" class="danger">Видалити</button>
@@ -1079,6 +1086,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         const id = tr?.dataset.id;
         const field = input.dataset.quick;
         if (!id || !field) return;
+
+        if (field === 'is_bestseller' && input.checked) {
+          const currentCount = productsCache.filter(
+            (p) => (p as unknown as { is_bestseller?: boolean }).is_bestseller
+          ).length;
+          if (currentCount >= 4) {
+            alert('Можна обрати максимум 4 хіти продажів. Спочатку зніми позначку з іншого товару.');
+            input.checked = false;
+            return;
+          }
+        }
+
         input.disabled = true;
         try {
           await saveProduct({ id, [field]: input.checked });
@@ -1143,6 +1162,19 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     hideDialogError(productDialogError);
     const payload = collectPayload(productForm, productFieldTypes);
     if (!payload.category_id) payload.category_id = null;
+
+    if (payload.is_bestseller) {
+      const otherBestsellersCount = productsCache.filter(
+        (p) => (p as unknown as { is_bestseller?: boolean }).is_bestseller && p.id !== payload.id
+      ).length;
+      if (otherBestsellersCount >= 4) {
+        showDialogError(
+          productDialogError,
+          'Можна обрати максимум 4 хіти продажів. Спочатку зніми позначку з іншого товару.'
+        );
+        return;
+      }
+    }
 
     try {
       await saveProduct(payload);

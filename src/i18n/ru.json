@@ -29,7 +29,8 @@
     "noProducts": "Товаров пока нет",
     "remove": "Удалить",
     "loading": "Загрузка...",
-    "emptyCart": "Корзина пуста"
+    "emptyCart": "Корзина пуста",
+    "addedToCart": "Добавлено ✓"
   },
   "footer": {
     "rights": "Все права защищены",
@@ -49,7 +50,8 @@
     "exploreCatalog": "Смотреть весь каталог",
     "catalogComingSoon": "Каталог пополняется — первые товары появятся совсем скоро.",
     "useCasesHeading": "Для каждого пространства и момента",
-    "useCasesSubtitle": "AromaAnna создаёт настроение там, где он нужен"
+    "useCasesSubtitle": "AromaAnna создаёт настроение там, где он нужен",
+    "bestsellersHeading": "Чаще всего выбирают"
   },
   "checkout": {
     "title": "Оформление заказа",
