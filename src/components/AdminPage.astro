@@ -1103,8 +1103,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           await saveProduct({ id, [field]: input.checked });
           const cached = productsCache.find((p) => p.id === id);
           if (cached) (cached as unknown as Record<string, unknown>)[field] = input.checked;
-        } catch {
+        } catch (err) {
           input.checked = !input.checked;
+          alert(
+            `Не вдалося зберегти: ${err instanceof Error ? err.message : 'невідома помилка'}`
+          );
         } finally {
           input.disabled = false;
         }
