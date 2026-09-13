@@ -91,6 +91,12 @@ const { categories } = await fetchCatalogData();
       )}
     </div>
 
+    <div class="story-cta">
+      <a class="btn story-cta-btn" href={localizedPath(lang, '/catalog')}>
+        {h.shopNow} <span aria-hidden="true">→</span>
+      </a>
+    </div>
+
     <video
       id="incense-video"
       class="incense-deco"
@@ -191,11 +197,20 @@ const { categories } = await fetchCatalogData();
   .story {
     max-width: 820px;
     margin: 44px auto 0;
-    padding-bottom: 40px;
+    padding-bottom: 8px;
     text-align: left;
     display: flex;
     flex-direction: column;
     gap: 22px;
+  }
+
+  .story-cta {
+    text-align: center;
+    padding-bottom: 44px;
+  }
+
+  .story-cta-btn {
+    font-size: 13px;
   }
 
   .incense-deco {
