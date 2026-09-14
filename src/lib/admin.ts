@@ -1,9 +1,10 @@
 import { supabase } from './supabase';
 import type { CategoryRow, ProductRow } from './catalog';
 import type { BlogPostRow } from './blog';
+import type { TestimonialRow } from './testimonials';
 import { mapSiteSettingsRow, type SiteSettings } from './settings';
 
-export type { SiteSettings };
+export type { SiteSettings, TestimonialRow };
 
 export interface CurrentAdmin {
   userId: string;
@@ -150,6 +151,27 @@ export async function saveBlogPost(payload: Record<string, unknown> & { id?: str
 
 export async function deleteBlogPost(id: string): Promise<void> {
   const { error } = await supabase.from('blog_posts').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ---------- Відгуки ----------
+
+export async function listAllTestimonials(): Promise<TestimonialRow[]> {
+  const { data, error } = await supabase.from('testimonials').select('*').order('sort_order', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as TestimonialRow[];
+}
+
+export async function saveTestimonial(payload: Record<string, unknown> & { id?: string }): Promise<void> {
+  const { id, ...rest } = payload;
+  const { error } = id
+    ? await supabase.from('testimonials').update(rest).eq('id', id)
+    : await supabase.from('testimonials').insert(rest);
+  if (error) throw error;
+}
+
+export async function deleteTestimonial(id: string): Promise<void> {
+  const { error } = await supabase.from('testimonials').delete().eq('id', id);
   if (error) throw error;
 }
 

@@ -27,6 +27,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <button type="button" class="admin-tab" data-tab="products">Товари</button>
         <button type="button" class="admin-tab" data-tab="categories">Категорії</button>
         <button type="button" class="admin-tab" data-tab="blog">Блог</button>
+        <button type="button" class="admin-tab" data-tab="testimonials">Відгуки</button>
         <button type="button" class="admin-tab" data-tab="settings">Реквізити</button>
       </div>
 
@@ -125,6 +126,30 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             </tr>
           </thead>
           <tbody id="blog-tbody"></tbody>
+        </table></div>
+      </div>
+
+      <!-- ВІДГУКИ -->
+      <div class="admin-panel" id="panel-testimonials" hidden>
+        <div class="panel-header">
+          <h2>Відгуки</h2>
+          <button type="button" id="add-testimonial-btn" class="btn">+ Додати відгук</button>
+        </div>
+        <p class="settings-hint">
+          Показуються на головній у блоці "Що кажуть наші клієнти", максимум 4 позначені як "Опубліковано", у порядку
+          поля "Порядок сортування". Додавай сюди тільки реальні відгуки від людей, які справді пробували товар.
+        </p>
+        <div class="table-scroll"><table class="admin-table">
+          <thead>
+            <tr>
+              <th>Автор</th>
+              <th>Текст (UA)</th>
+              <th>Рейтинг</th>
+              <th>Опубліковано</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="testimonials-tbody"></tbody>
         </table></div>
       </div>
 
@@ -274,6 +299,41 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <p class="dialog-error" id="blog-dialog-error" hidden></p>
         <div class="dialog-actions">
           <button type="button" id="blog-cancel" class="btn btn-outline">Скасувати</button>
+          <button type="submit" class="btn">Зберегти</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- ДІАЛОГ: відгук -->
+    <dialog id="testimonial-dialog" class="admin-dialog">
+      <form id="testimonial-form">
+        <h2 id="testimonial-dialog-title">Відгук</h2>
+        <input type="hidden" name="id" />
+
+        <div class="form-grid">
+          <label>Ім'я автора<input type="text" name="author_name" required /></label>
+          <label>
+            Рейтинг (1-5)
+            <select name="rating">
+              <option value="5">5</option>
+              <option value="4">4</option>
+              <option value="3">3</option>
+              <option value="2">2</option>
+              <option value="1">1</option>
+            </select>
+          </label>
+
+          <label class="span-2">Текст відгуку (UA)<textarea name="text_ua" rows="3" required></textarea></label>
+          <label class="span-2">Текст відгуку (RU)<textarea name="text_ru" rows="3"></textarea></label>
+
+          <label>Порядок сортування<input type="number" name="sort_order" step="1" value="0" /></label>
+          <label class="checkbox-label"><input type="checkbox" name="published" /> Опубліковано</label>
+        </div>
+
+        <p class="dialog-error" id="testimonial-dialog-error" hidden></p>
+
+        <div class="dialog-actions">
+          <button type="button" id="testimonial-cancel" class="btn btn-outline">Скасувати</button>
           <button type="submit" class="btn">Зберегти</button>
         </div>
       </form>
@@ -658,9 +718,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 </style>
 
 <script>
-  import { requireAdmin, listAllProducts, saveProduct, deleteProduct, listAllCategories, saveCategory, deleteCategory, listAllBlogPosts, saveBlogPost, deleteBlogPost, uploadProductImage, listAllOrders, updateOrderStatus, fetchSiteSettingsAdmin, saveSiteSettings } from '@/lib/admin';
+  import { requireAdmin, listAllProducts, saveProduct, deleteProduct, listAllCategories, saveCategory, deleteCategory, listAllBlogPosts, saveBlogPost, deleteBlogPost, uploadProductImage, listAllOrders, updateOrderStatus, fetchSiteSettingsAdmin, saveSiteSettings, listAllTestimonials, saveTestimonial, deleteTestimonial } from '@/lib/admin';
   import type { ProductRow, CategoryRow } from '@/lib/catalog';
   import type { BlogPostRow } from '@/lib/blog';
+  import type { TestimonialRow } from '@/lib/testimonials';
 
   const loadingEl = document.getElementById('admin-loading');
   const deniedEl = document.getElementById('admin-denied');
@@ -719,7 +780,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     }
 
     contentEl?.removeAttribute('hidden');
-    await Promise.all([reloadOrders(), reloadCategories(), reloadProducts(), reloadBlog(), reloadSettings()]);
+    await Promise.all([
+      reloadOrders(),
+      reloadCategories(),
+      reloadProducts(),
+      reloadBlog(),
+      reloadTestimonials(),
+      reloadSettings(),
+    ]);
   }
 
   // ---------- Таби ----------
@@ -730,6 +798,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     products: document.getElementById('panel-products'),
     categories: document.getElementById('panel-categories'),
     blog: document.getElementById('panel-blog'),
+    testimonials: document.getElementById('panel-testimonials'),
     settings: document.getElementById('panel-settings'),
   };
 
@@ -1363,6 +1432,90 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       await reloadBlog();
     } catch (err) {
       showDialogError(blogDialogError, err instanceof Error ? err.message : 'Помилка збереження');
+    }
+  });
+
+  // ---------- ВІДГУКИ ----------
+
+  const testimonialDialog = document.getElementById('testimonial-dialog') as HTMLDialogElement | null;
+  const testimonialForm = document.getElementById('testimonial-form') as HTMLFormElement | null;
+  const testimonialDialogTitle = document.getElementById('testimonial-dialog-title');
+  const testimonialDialogError = document.getElementById('testimonial-dialog-error');
+  const testimonialsTbody = document.getElementById('testimonials-tbody');
+
+  const testimonialFieldTypes: Record<string, FieldType> = {
+    author_name: 'text',
+    text_ua: 'text',
+    text_ru: 'text',
+    rating: 'number',
+    sort_order: 'number',
+    published: 'checkbox',
+  };
+
+  async function reloadTestimonials() {
+    if (!testimonialsTbody) return;
+    const items = await listAllTestimonials();
+
+    testimonialsTbody.innerHTML = items
+      .map(
+        (t) => `
+          <tr data-id="${t.id}">
+            <td>${t.author_name}</td>
+            <td>${(t.text_ua || '').slice(0, 60)}${t.text_ua && t.text_ua.length > 60 ? '…' : ''}</td>
+            <td>${t.rating ?? '—'}</td>
+            <td>${t.published ? 'Так' : 'Ні'}</td>
+            <td class="row-actions">
+              <button type="button" data-action="edit">Редагувати</button>
+              <button type="button" data-action="delete" class="danger">Видалити</button>
+            </td>
+          </tr>
+        `
+      )
+      .join('');
+
+    testimonialsTbody.querySelectorAll<HTMLButtonElement>('[data-action="edit"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.closest('tr')?.dataset.id;
+        const item = items.find((t) => t.id === id);
+        if (item) openTestimonialDialog(item);
+      });
+    });
+
+    testimonialsTbody.querySelectorAll<HTMLButtonElement>('[data-action="delete"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.closest('tr')?.dataset.id;
+        if (!id) return;
+        if (!confirm('Видалити відгук?')) return;
+        await deleteTestimonial(id);
+        await reloadTestimonials();
+      });
+    });
+  }
+
+  function openTestimonialDialog(item?: TestimonialRow) {
+    if (!testimonialForm || !testimonialDialog) return;
+    hideDialogError(testimonialDialogError);
+    resetForm(testimonialForm);
+    if (testimonialDialogTitle) testimonialDialogTitle.textContent = item ? 'Редагувати відгук' : 'Новий відгук';
+    if (item) fillForm(testimonialForm, item as unknown as Record<string, unknown>);
+    testimonialDialog.showModal();
+  }
+
+  document.getElementById('add-testimonial-btn')?.addEventListener('click', () => openTestimonialDialog());
+  document.getElementById('testimonial-cancel')?.addEventListener('click', () => testimonialDialog?.close());
+
+  testimonialForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!testimonialForm) return;
+    hideDialogError(testimonialDialogError);
+    const payload = collectPayload(testimonialForm, testimonialFieldTypes);
+
+    try {
+      await saveTestimonial(payload);
+      testimonialDialog?.close();
+      await reloadTestimonials();
+    } catch (err) {
+      showDialogError(testimonialDialogError, err instanceof Error ? err.message : 'Помилка збереження');
     }
   });
 
