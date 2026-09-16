@@ -91,36 +91,31 @@ const cases = [
     </div>
   </div>
 
-  <div class="carousel" data-carousel>
-    <button class="car-btn car-prev" type="button" aria-label="Previous" data-prev>‹</button>
+  <div class="carousel">
+    <button class="car-btn car-prev" type="button" aria-label="Previous">‹</button>
 
-    <div class="car-track" data-track>
-      {
-        cases.map((c) => (
-          <a href={localizedPath(lang, '/catalog')} class="case-card" data-slide>
-            <img
-              src={c.img}
-              alt={lang === 'ua' ? c.ua : c.ru}
-              loading="lazy"
-              decoding="async"
-            />
-            <span class="case-overlay" aria-hidden="true" />
-            <span class="case-text">
-              <span class="case-label">{lang === 'ua' ? c.ua : c.ru}</span>
-              <span class="case-caption">{lang === 'ua' ? c.captionUa : c.captionRu}</span>
-            </span>
-          </a>
-        ))
-      }
+    <div class="swiper use-cases-swiper">
+      <div class="swiper-wrapper">
+        {
+          cases.map((c) => (
+            <a href={localizedPath(lang, '/catalog')} class="case-card swiper-slide">
+              <img src={c.img} alt={lang === 'ua' ? c.ua : c.ru} loading="lazy" decoding="async" />
+              <span class="case-overlay" aria-hidden="true" />
+              <span class="case-text">
+                <span class="case-label">{lang === 'ua' ? c.ua : c.ru}</span>
+                <span class="case-caption">{lang === 'ua' ? c.captionUa : c.captionRu}</span>
+              </span>
+            </a>
+          ))
+        }
+      </div>
     </div>
 
-    <button class="car-btn car-next" type="button" aria-label="Next" data-next>›</button>
+    <button class="car-btn car-next" type="button" aria-label="Next">›</button>
   </div>
 
   <div class="container">
-    <div class="car-dots" data-dots>
-      {cases.map((_, i) => <button class="dot" type="button" aria-label={`Slide ${i + 1}`} data-dot={i} />)}
-    </div>
+    <div class="car-dots"></div>
 
     <p class="use-cases-outro">
       {lang === 'ua'
@@ -181,28 +176,19 @@ const cases = [
     margin-left: calc(50% - 50vw);
   }
 
-  .car-track {
-    display: flex;
-    gap: 20px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scroll-behavior: smooth;
+  .use-cases-swiper {
     padding: 4px var(--gutter) 18px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
   }
 
-  .car-track::-webkit-scrollbar {
-    display: none;
+  :global(.use-cases-swiper .swiper-wrapper) {
+    align-items: stretch;
   }
 
   .case-card {
     position: relative;
     display: block;
-    flex: 0 0 auto;
     width: 320px;
     aspect-ratio: 4 / 5;
-    scroll-snap-align: center;
     border-radius: 18px;
     overflow: hidden;
     background: var(--color-accent-soft);
@@ -212,7 +198,7 @@ const cases = [
     transition: transform 0.4s ease, opacity 0.4s ease;
   }
 
-  .case-card.is-active {
+  :global(.case-card.swiper-slide-active) {
     opacity: 1;
     transform: scale(1);
   }
@@ -312,7 +298,7 @@ const cases = [
     margin-top: 8px;
   }
 
-  .dot {
+  :global(.car-dots .dot) {
     width: 7px;
     height: 7px;
     padding: 0;
@@ -323,7 +309,7 @@ const cases = [
     transition: background 0.2s ease, transform 0.2s ease;
   }
 
-  .dot.active {
+  :global(.car-dots .dot.active) {
     background: var(--color-accent-dark);
     transform: scale(1.35);
   }
@@ -354,102 +340,57 @@ const cases = [
 </style>
 
 <script>
-  const carousel = document.querySelector('[data-carousel]');
+  import Swiper from 'swiper';
+  import { Autoplay } from 'swiper/modules';
+  import 'swiper/css';
 
-  if (carousel) {
-    const track = carousel.querySelector('[data-track]') as HTMLElement | null;
+  const carousel = document.querySelector<HTMLElement>('.carousel');
+  const swiperEl = carousel?.querySelector<HTMLElement>('.use-cases-swiper');
+  const prevBtn = carousel?.querySelector<HTMLButtonElement>('.car-prev');
+  const nextBtn = carousel?.querySelector<HTMLButtonElement>('.car-next');
+  const dotsWrap = document.querySelector<HTMLElement>('.car-dots');
 
-    if (track) {
-    const trackEl: HTMLElement = track;
-    const slides = Array.from(trackEl.children) as HTMLElement[];
-    const prevBtn = carousel.querySelector('[data-prev]');
-    const nextBtn = carousel.querySelector('[data-next]');
-    const dotsWrap = document.querySelector('[data-dots]');
-    const dots = dotsWrap ? Array.from(dotsWrap.children) : [];
+  if (swiperEl) {
+    const slideCount = swiperEl.querySelectorAll('.swiper-slide').length;
 
-    let index = 0;
-    let autoplayTimer: number | null = null;
-
-    function updateActive() {
-      dots.forEach((d, i) => d.classList.toggle('active', i === index));
-      slides.forEach((s, i) => s.classList.toggle('is-active', i === index));
-    }
-
-    function scrollToIndex(i: number, smooth = true) {
-      index = (i + slides.length) % slides.length;
-      const slide = slides[index];
-      const offset = slide.offsetLeft - (trackEl.clientWidth - slide.clientWidth) / 2;
-      trackEl.scrollTo({ left: offset, behavior: smooth ? 'smooth' : 'auto' });
-      updateActive();
-    }
-
-    function next() {
-      scrollToIndex(index + 1);
-    }
-
-    function prev() {
-      scrollToIndex(index - 1);
-    }
-
-    function startAutoplay() {
-      stopAutoplay();
-      autoplayTimer = window.setInterval(next, 4200);
-    }
-
-    function stopAutoplay() {
-      if (autoplayTimer) {
-        window.clearInterval(autoplayTimer);
-        autoplayTimer = null;
+    // Власні крапки-індикатори (замінюють стандартну пагінацію Swiper,
+    // щоб зберегти той самий вигляд .dot/.dot.active, що й раніше).
+    if (dotsWrap) {
+      dotsWrap.innerHTML = '';
+      for (let i = 0; i < slideCount; i++) {
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.className = 'dot';
+        dot.setAttribute('aria-label', `Slide ${i + 1}`);
+        dotsWrap.appendChild(dot);
       }
     }
+    const dots = dotsWrap ? Array.from(dotsWrap.children) as HTMLButtonElement[] : [];
 
-    if (nextBtn) {
-      nextBtn.addEventListener('click', () => {
-        next();
-        startAutoplay();
-      });
-    }
-
-    if (prevBtn) {
-      prevBtn.addEventListener('click', () => {
-        prev();
-        startAutoplay();
-      });
-    }
+    const swiper = new Swiper(swiperEl, {
+      modules: [Autoplay],
+      slidesPerView: 'auto',
+      spaceBetween: 20,
+      centeredSlides: true,
+      loop: slideCount > 2,
+      autoplay: {
+        delay: 4200,
+        disableOnInteraction: false,
+        pauseOnMouseEnter: true,
+      },
+      on: {
+        slideChange(sw) {
+          const real = sw.realIndex ?? sw.activeIndex;
+          dots.forEach((d, i) => d.classList.toggle('active', i === real));
+        },
+      },
+    });
 
     dots.forEach((d, i) => {
-      d.addEventListener('click', () => {
-        scrollToIndex(i);
-        startAutoplay();
-      });
+      d.addEventListener('click', () => swiper.slideToLoop(i));
     });
 
-    carousel.addEventListener('mouseenter', stopAutoplay);
-    carousel.addEventListener('mouseleave', startAutoplay);
-    carousel.addEventListener('touchstart', stopAutoplay, { passive: true });
-
-    let scrollTimeout: number | undefined;
-    trackEl.addEventListener('scroll', () => {
-      window.clearTimeout(scrollTimeout);
-      scrollTimeout = window.setTimeout(() => {
-        const trackCenter = trackEl.scrollLeft + trackEl.clientWidth / 2;
-        let closest = 0;
-        let closestDist = Infinity;
-        slides.forEach((s, i) => {
-          const c = s.offsetLeft + s.clientWidth / 2;
-          const dist = Math.abs(c - trackCenter);
-          if (dist < closestDist) {
-            closestDist = dist;
-            closest = i;
-          }
-        });
-        index = closest;
-        updateActive();
-      }, 100);
-    });
-
-    updateActive();
-    startAutoplay();
-    }
+    if (prevBtn) prevBtn.addEventListener('click', () => swiper.slidePrev());
+    if (nextBtn) nextBtn.addEventListener('click', () => swiper.slideNext());
   }
 </script>
