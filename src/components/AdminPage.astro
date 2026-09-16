@@ -278,7 +278,16 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <input type="hidden" name="id" />
         <div class="form-grid">
           <label>Slug<input type="text" name="slug" required /></label>
-          <label>Фото обкладинки (URL)<input type="text" name="cover_image" /></label>
+          <label class="span-2">
+            Фото обкладинки
+            <input type="text" name="cover_image" placeholder="https://..." />
+            <div class="image-uploader">
+              <input type="file" id="blog-image-input" accept="image/*" hidden />
+              <button type="button" id="blog-image-upload-btn" class="btn btn-outline btn-sm">+ Завантажити фото</button>
+              <span id="blog-image-status" class="image-status"></span>
+            </div>
+            <div id="blog-image-preview" class="image-previews"></div>
+          </label>
 
           <label>Заголовок (UA)<input type="text" name="title_ua" required /></label>
           <label>Заголовок (RU)<input type="text" name="title_ru" required /></label>
@@ -1350,6 +1359,56 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   const blogDialogError = document.getElementById('blog-dialog-error');
   const blogTbody = document.getElementById('blog-tbody');
 
+  // ---------- Завантаження фото обкладинки блогу ----------
+
+  const blogCoverInput = blogForm?.elements.namedItem('cover_image') as HTMLInputElement | null;
+  const blogImageFileInput = document.getElementById('blog-image-input') as HTMLInputElement | null;
+  const blogImageUploadBtn = document.getElementById('blog-image-upload-btn') as HTMLButtonElement | null;
+  const blogImageStatus = document.getElementById('blog-image-status');
+  const blogImagePreview = document.getElementById('blog-image-preview');
+
+  function renderBlogImagePreview() {
+    if (!blogImagePreview) return;
+    const url = blogCoverInput?.value || '';
+    blogImagePreview.innerHTML = url
+      ? `
+        <div class="image-preview">
+          <img src="${url}" alt="" />
+          <button type="button" data-clear-cover aria-label="Видалити фото">✕</button>
+        </div>
+      `
+      : '';
+
+    blogImagePreview.querySelector<HTMLButtonElement>('[data-clear-cover]')?.addEventListener('click', () => {
+      if (blogCoverInput) blogCoverInput.value = '';
+      renderBlogImagePreview();
+    });
+  }
+
+  blogImageUploadBtn?.addEventListener('click', () => blogImageFileInput?.click());
+
+  blogImageFileInput?.addEventListener('change', async () => {
+    const file = blogImageFileInput.files?.[0];
+    if (!file) return;
+
+    blogImageUploadBtn?.setAttribute('disabled', 'true');
+    if (blogImageStatus) blogImageStatus.textContent = 'Завантаження...';
+
+    try {
+      const url = await uploadProductImage(file);
+      if (blogCoverInput) blogCoverInput.value = url;
+      renderBlogImagePreview();
+      if (blogImageStatus) blogImageStatus.textContent = '';
+    } catch (err) {
+      if (blogImageStatus) {
+        blogImageStatus.textContent = err instanceof Error ? `Помилка: ${err.message}` : 'Помилка завантаження';
+      }
+    } finally {
+      blogImageUploadBtn?.removeAttribute('disabled');
+      blogImageFileInput.value = '';
+    }
+  });
+
   const blogFieldTypes: Record<string, FieldType> = {
     slug: 'text',
     cover_image: 'text',
@@ -1411,6 +1470,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     resetForm(blogForm);
     if (blogDialogTitle) blogDialogTitle.textContent = post ? 'Редагувати пост' : 'Новий пост';
     if (post) fillForm(blogForm, post as unknown as Record<string, unknown>);
+    renderBlogImagePreview();
+    if (blogImageStatus) blogImageStatus.textContent = '';
     blogDialog.showModal();
   }
 
