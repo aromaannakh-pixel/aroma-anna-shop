@@ -146,3 +146,28 @@ button {
   background: #eeeee2;
   color: var(--color-text-muted);
 }
+
+#site-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translate(-50%, 12px);
+  z-index: 300;
+  background: var(--color-text);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 22px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  max-width: calc(100vw - 40px);
+  text-align: center;
+}
+
+#site-toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}

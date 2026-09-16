@@ -30,7 +30,8 @@
     "remove": "Удалить",
     "loading": "Загрузка...",
     "emptyCart": "Корзина пуста",
-    "addedToCart": "Добавлено ✓"
+    "addedToCart": "Добавлено ✓",
+    "cartToastAdded": "Товар добавлен в корзину"
   },
   "footer": {
     "rights": "Все права защищены",

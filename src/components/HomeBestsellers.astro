@@ -74,6 +74,7 @@ const bestsellers = products.filter((p) => p.is_bestseller).slice(0, 4);
                   data-stock={p.stock}
                   data-label={dict.common.addToCart}
                   data-added-label={dict.common.addedToCart}
+                  data-added-toast={dict.common.cartToastAdded}
                 >
                   {p.in_stock ? dict.common.addToCart : dict.common.outOfStock}
                 </button>
@@ -254,6 +255,7 @@ const bestsellers = products.filter((p) => p.is_bestseller).slice(0, 4);
 
 <script>
   import { addToCart } from '@/lib/cart';
+  import { showToast } from '@/lib/toast';
 
   document.querySelectorAll<HTMLButtonElement>('[data-add-to-cart]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -270,6 +272,7 @@ const bestsellers = products.filter((p) => p.is_bestseller).slice(0, 4);
         },
         1
       );
+      showToast(btn.dataset.addedToast || '');
 
       const original = btn.dataset.label || btn.textContent || '';
       btn.textContent = btn.dataset.addedLabel || original;

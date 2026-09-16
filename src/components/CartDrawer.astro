@@ -165,6 +165,11 @@ const dict = getDictionary(lang);
     padding: 0;
   }
 
+  :global(.qty-btn:disabled) {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
   :global(.cart-item-qty span) {
     min-width: 20px;
     text-align: center;
@@ -252,7 +257,7 @@ const dict = getDictionary(lang);
             <div>
               <p class="cart-item-name">${name}</p>
               <div class="cart-item-qty">
-                <button type="button" class="qty-btn" data-action="dec">−</button>
+                <button type="button" class="qty-btn" data-action="dec" ${item.quantity <= 1 ? 'disabled' : ''}>−</button>
                 <span>${item.quantity}</span>
                 <button type="button" class="qty-btn" data-action="inc">+</button>
               </div>
@@ -265,6 +270,7 @@ const dict = getDictionary(lang);
           `;
 
           row.querySelector('[data-action="dec"]')?.addEventListener('click', () => {
+            if (item.quantity <= 1) return;
             const warningEl = row.querySelector<HTMLElement>('.cart-item-stock-warning');
             warningEl?.setAttribute('hidden', 'true');
             updateQuantity(item.productId, item.quantity - 1);

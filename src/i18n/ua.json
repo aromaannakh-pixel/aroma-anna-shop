@@ -30,7 +30,8 @@
     "remove": "Видалити",
     "loading": "Завантаження...",
     "emptyCart": "Кошик порожній",
-    "addedToCart": "Додано ✓"
+    "addedToCart": "Додано ✓",
+    "cartToastAdded": "Товар додано в кошик"
   },
   "footer": {
     "rights": "Усі права захищено",

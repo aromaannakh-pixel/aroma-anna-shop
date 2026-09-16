@@ -104,6 +104,7 @@ const path = `/product/${product.slug}`;
           data-image={images[0] ?? ''}
           data-price={product.effectivePrice}
           data-stock={product.stock}
+          data-added-toast={dict.common.cartToastAdded}
         >
           {product.in_stock ? dict.common.addToCart : dict.common.outOfStock}
         </button>
@@ -261,6 +262,7 @@ const path = `/product/${product.slug}`;
 
 <script>
   import { addToCart } from '@/lib/cart';
+  import { showToast } from '@/lib/toast';
 
   const mainImg = document.getElementById('gallery-main-img') as HTMLImageElement | null;
   document.querySelectorAll<HTMLButtonElement>('.thumb-btn').forEach((btn) => {
@@ -318,5 +320,6 @@ const path = `/product/${product.slug}`;
       },
       qty
     );
+    showToast(addBtn.dataset.addedToast || '');
   });
 </script>
