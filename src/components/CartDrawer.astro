@@ -46,11 +46,14 @@ const dict = getDictionary(lang);
     z-index: 100;
     visibility: hidden;
     pointer-events: none;
+    /* затримуємо приховування, щоб встигла дограти анімація закриття панелі/фону нижче */
+    transition: visibility 0s linear 0.25s;
   }
 
   .cart-drawer.open {
     visibility: visible;
     pointer-events: auto;
+    transition-delay: 0s;
   }
 
   .cart-backdrop {

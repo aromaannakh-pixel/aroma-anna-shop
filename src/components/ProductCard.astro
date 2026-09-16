@@ -22,6 +22,7 @@ const createdTs = new Date(product.created_at).getTime();
   data-price={product.effectivePrice}
   data-created={createdTs}
   data-in-stock={product.in_stock ? '1' : '0'}
+  data-name={`${product.name_ua} ${product.name_ru}`.toLowerCase()}
   href={localizedPath(lang, `/product/${product.slug}`)}
 >
   <div class="thumb">

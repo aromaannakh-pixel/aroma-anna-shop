@@ -26,9 +26,30 @@ const content: LegalDoc = legalContent[lang][doc];
     {content.sections.map((section) => (
       <section class="legal-section">
         <h2>{section.heading}</h2>
-        {section.paragraphs.map((p) => (
-          <p>{p}</p>
-        ))}
+        {section.paragraphs.map((p) => {
+          if (p.startsWith('Email: ')) {
+            const email = p.slice('Email: '.length).trim();
+            return email && email !== '-' ? (
+              <p>
+                Email: <a href={`mailto:${email}`}>{email}</a>
+              </p>
+            ) : (
+              <p>{p}</p>
+            );
+          }
+          if (p.startsWith('Телефон: ')) {
+            const phone = p.slice('Телефон: '.length).trim();
+            const telHref = phone.replace(/[^\d+]/g, '');
+            return phone && phone !== '-' ? (
+              <p>
+                Телефон: <a href={`tel:${telHref}`}>{phone}</a>
+              </p>
+            ) : (
+              <p>{p}</p>
+            );
+          }
+          return <p>{p}</p>;
+        })}
       </section>
     ))}
   </article>
