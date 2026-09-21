@@ -1,0 +1,38 @@
+User-agent: *
+Allow: /
+
+# Пошукові боти
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# AI-боти (щоб сайт міг зʼявлятися у відповідях ChatGPT, Perplexity, Google AI Overviews тощо)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+# Службові сторінки — не для індексації
+Disallow: /admin
+Disallow: /ru/admin
+Disallow: /account
+Disallow: /ru/account
+Disallow: /checkout
+Disallow: /ru/checkout
+
+Sitemap: https://aroma-anna.netlify.app/sitemap.xml

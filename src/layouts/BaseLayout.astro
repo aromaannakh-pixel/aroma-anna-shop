@@ -19,6 +19,7 @@ const { lang, path, title, description, noindex } = Astro.props;
 const dict = getDictionary(lang);
 const pageTitle = title ? `${title} — ${dict.siteName}` : `${dict.siteName} — ${dict.tagline}`;
 const pageDescription = description ?? dict.tagline;
+const ogImage = new URL('/logo-badge.png', Astro.site).href;
 ---
 
 <!doctype html>
@@ -40,6 +41,8 @@ const pageDescription = description ?? dict.tagline;
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={pageDescription} />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="canonical" href={Astro.url.href} />
     <link rel="alternate" hreflang="uk" href={new URL(localizedPath('ua', path), Astro.site).href} />
     <link rel="alternate" hreflang="ru" href={new URL(localizedPath('ru', path), Astro.site).href} />

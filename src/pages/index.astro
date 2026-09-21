@@ -5,9 +5,23 @@ import HomeBestsellers from '@/components/HomeBestsellers.astro';
 import HomeUseCases from '@/components/HomeUseCases.astro';
 import HomeTestimonials from '@/components/HomeTestimonials.astro';
 import HomeCategoryTeaser from '@/components/HomeCategoryTeaser.astro';
+import { fetchSiteSettings } from '@/lib/settings';
+
+const settings = await fetchSiteSettings();
+const orgLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: settings.sellerName || 'AromaAnna',
+  url: Astro.site?.href,
+  image: new URL('/logo-badge.png', Astro.site).href,
+  ...(settings.phone ? { telephone: settings.phone } : {}),
+  ...(settings.email ? { email: settings.email } : {}),
+  ...(settings.address ? { address: { '@type': 'PostalAddress', streetAddress: settings.address } } : {}),
+};
 ---
 
 <BaseLayout lang="ua" path="/">
+  <script type="application/ld+json" is:inline set:html={JSON.stringify(orgLd)} />
   <HomeHero lang="ua" />
   <HomeBestsellers lang="ua" />
   <HomeUseCases lang="ua" />
