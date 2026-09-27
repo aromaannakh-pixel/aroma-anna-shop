@@ -28,7 +28,45 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <button type="button" class="admin-tab" data-tab="categories">Категорії</button>
         <button type="button" class="admin-tab" data-tab="blog">Блог</button>
         <button type="button" class="admin-tab" data-tab="testimonials">Відгуки</button>
+        <button type="button" class="admin-tab" data-tab="stats">Статистика</button>
         <button type="button" class="admin-tab" data-tab="settings">Реквізити</button>
+      </div>
+
+      <!-- СТАТИСТИКА -->
+      <div class="admin-panel" id="panel-stats" hidden>
+        <div class="panel-header">
+          <h2>Статистика</h2>
+        </div>
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card">
+            <span class="stat-value" id="stat-total-users">—</span>
+            <span class="stat-label">Зареєстровано користувачів</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="stat-new-users-7d">—</span>
+            <span class="stat-label">Нових за 7 днів</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="stat-new-users-30d">—</span>
+            <span class="stat-label">Нових за 30 днів</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="stat-total-orders">—</span>
+            <span class="stat-label">Замовлень усього</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="stat-new-orders-7d">—</span>
+            <span class="stat-label">Замовлень за 7 днів</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="stat-revenue-30d">—</span>
+            <span class="stat-label">Дохід за 30 днів</span>
+          </div>
+        </div>
+        <p id="stats-note" class="stats-note" hidden>
+          Кількість користувачів не вдалося порахувати — можливо, потрібно додати колонку created_at або дозвіл на
+          читання в таблиці profiles.
+        </p>
       </div>
 
       <!-- ЗАМОВЛЕННЯ -->
@@ -427,6 +465,40 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     margin: 0;
   }
 
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+  }
+
+  .stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 20px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+  }
+
+  .stat-value {
+    font-family: var(--font-heading);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--color-accent-dark);
+  }
+
+  .stat-label {
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
+  .stats-note {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+
   .filter-bar {
     display: flex;
     flex-wrap: wrap;
@@ -727,7 +799,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 </style>
 
 <script>
-  import { requireAdmin, listAllProducts, saveProduct, deleteProduct, listAllCategories, saveCategory, deleteCategory, listAllBlogPosts, saveBlogPost, deleteBlogPost, uploadProductImage, listAllOrders, updateOrderStatus, fetchSiteSettingsAdmin, saveSiteSettings, listAllTestimonials, saveTestimonial, deleteTestimonial } from '@/lib/admin';
+  import { requireAdmin, listAllProducts, saveProduct, deleteProduct, listAllCategories, saveCategory, deleteCategory, listAllBlogPosts, saveBlogPost, deleteBlogPost, uploadProductImage, listAllOrders, updateOrderStatus, fetchSiteSettingsAdmin, saveSiteSettings, listAllTestimonials, saveTestimonial, deleteTestimonial, fetchAdminStats } from '@/lib/admin';
   import type { ProductRow, CategoryRow } from '@/lib/catalog';
   import type { BlogPostRow } from '@/lib/blog';
   import type { TestimonialRow } from '@/lib/testimonials';
@@ -796,6 +868,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       reloadBlog(),
       reloadTestimonials(),
       reloadSettings(),
+      reloadStats(),
     ]);
   }
 
@@ -808,6 +881,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     categories: document.getElementById('panel-categories'),
     blog: document.getElementById('panel-blog'),
     testimonials: document.getElementById('panel-testimonials'),
+    stats: document.getElementById('panel-stats'),
     settings: document.getElementById('panel-settings'),
   };
 
@@ -899,6 +973,25 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     completed: 'Виконано',
     cancelled: 'Скасовано',
   };
+
+  async function reloadStats() {
+    const stats = await fetchAdminStats();
+
+    const setText = (id: string, value: string) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
+
+    const usersKnown = stats.totalUsers !== null;
+    setText('stat-total-users', usersKnown ? String(stats.totalUsers) : '—');
+    setText('stat-new-users-7d', stats.newUsers7d !== null ? String(stats.newUsers7d) : '—');
+    setText('stat-new-users-30d', stats.newUsers30d !== null ? String(stats.newUsers30d) : '—');
+    setText('stat-total-orders', String(stats.totalOrders));
+    setText('stat-new-orders-7d', String(stats.newOrders7d));
+    setText('stat-revenue-30d', `${stats.revenue30d.toLocaleString('uk-UA')} грн`);
+
+    document.getElementById('stats-note')?.toggleAttribute('hidden', usersKnown);
+  }
 
   async function reloadOrders() {
     if (!ordersTbody) return;

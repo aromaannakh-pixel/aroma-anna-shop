@@ -27,6 +27,50 @@ export async function requireAdmin(): Promise<CurrentAdmin | null> {
   return { userId: user.id, email: user.email ?? null };
 }
 
+// ---------- Статистика ----------
+
+export interface AdminStats {
+  totalUsers: number | null;
+  newUsers7d: number | null;
+  newUsers30d: number | null;
+  totalOrders: number;
+  newOrders7d: number;
+  revenue30d: number;
+}
+
+/**
+ * Лічильники для вкладки "Статистика" — дає власниці загальну картину, чи є
+ * рух на сайті (реєстрації, замовлення), без потреби лізти в Supabase.
+ * totalUsers/newUsersXd можуть бути null, якщо в profiles немає колонки
+ * created_at — тоді просто не показуємо ці картки, а не ламаємо сторінку.
+ */
+export async function fetchAdminStats(): Promise<AdminStats> {
+  const now = Date.now();
+  const d7 = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const d30 = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [totalUsersRes, newUsers7dRes, newUsers30dRes, totalOrdersRes, newOrders7dRes, revenueRes] =
+    await Promise.all([
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', d7),
+      supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', d30),
+      supabase.from('orders').select('*', { count: 'exact', head: true }),
+      supabase.from('orders').select('*', { count: 'exact', head: true }).gte('created_at', d7),
+      supabase.from('orders').select('total, status').gte('created_at', d30).neq('status', 'cancelled'),
+    ]);
+
+  const revenue30d = (revenueRes.data ?? []).reduce((sum, o) => sum + Number(o.total), 0);
+
+  return {
+    totalUsers: totalUsersRes.error ? null : totalUsersRes.count,
+    newUsers7d: newUsers7dRes.error ? null : newUsers7dRes.count,
+    newUsers30d: newUsers30dRes.error ? null : newUsers30dRes.count,
+    totalOrders: totalOrdersRes.count ?? 0,
+    newOrders7d: newOrders7dRes.count ?? 0,
+    revenue30d,
+  };
+}
+
 // ---------- Фото товарів ----------
 
 /**
