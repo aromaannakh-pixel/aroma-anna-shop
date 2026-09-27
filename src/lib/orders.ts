@@ -19,13 +19,23 @@ export interface OrderRow {
   order_items: OrderItemRow[];
 }
 
-/** Замовлення поточного користувача — RLS сам обмежує вибіркою лише своїх (orders.user_id = auth.uid()). */
+/**
+ * Замовлення поточного користувача. RLS дозволяє адміну бачити всі замовлення
+ * (потрібно для вкладки "Замовлення" в адмінці) — тому тут ДОДАТКОВО явно
+ * фільтруємо по user_id у коді, щоб на особистій сторінці "Кабінет" адмін
+ * теж бачив лише свої власні замовлення, а не всі підряд.
+ */
 export async function fetchMyOrders(): Promise<OrderRow[]> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData.session?.user?.id;
+  if (!userId) return [];
+
   const { data, error } = await supabase
     .from('orders')
     .select(
       'id, order_number, status, total, created_at, order_items(id, product_id, product_name_ua, product_name_ru, unit_price, quantity, products(images))'
     )
+    .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
   if (error) {
