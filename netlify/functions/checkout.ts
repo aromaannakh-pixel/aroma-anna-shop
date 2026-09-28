@@ -146,6 +146,61 @@ async function sendConfirmationEmail(params: {
   }
 }
 
+async function sendOwnerNotificationEmail(params: {
+  to: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  orderNumber: number;
+  items: { name: string; quantity: number; lineTotal: number }[];
+  total: number;
+  deliveryLabel: string;
+  city?: string;
+  address?: string;
+  comment?: string;
+}): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromAddress = process.env.RESEND_FROM_EMAIL || 'AromaAnna <onboarding@resend.dev>';
+  if (!apiKey || !params.to) return false;
+
+  const itemsHtml = params.items
+    .map(
+      (i) =>
+        `<tr><td style="padding:4px 0;">${i.name} × ${i.quantity}</td><td style="padding:4px 0;text-align:right;">${i.lineTotal.toFixed(0)} ₴</td></tr>`
+    )
+    .join('');
+
+  const html = `
+    <div style="font-family:Georgia,serif;color:#2b2e22;max-width:480px;margin:0 auto;">
+      <h2 style="color:#256b57;">Нове замовлення №${params.orderNumber}</h2>
+      <p><b>${params.customerName}</b>, ${params.customerPhone}${params.customerEmail ? `, ${params.customerEmail}` : ''}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">${itemsHtml}</table>
+      <p style="font-weight:700;text-align:right;border-top:1px solid #e2e2d2;padding-top:8px;">Разом: ${params.total.toFixed(0)} ₴</p>
+      <p style="font-size:14px;">Доставка: ${params.deliveryLabel}${params.city ? `<br>Місто: ${params.city}` : ''}${params.address ? `<br>Адреса: ${params.address}` : ''}</p>
+      ${params.comment ? `<p style="font-size:14px;">Коментар: ${params.comment}</p>` : ''}
+    </div>
+  `;
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: fromAddress,
+        to: params.to,
+        subject: `Нове замовлення №${params.orderNumber} — AromaAnna`,
+        html,
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export const handler: Handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return jsonResponse(405, { success: false, error: 'Method not allowed' });
@@ -324,6 +379,30 @@ export const handler: Handler = async (event) => {
       total,
       deliveryLabel: DELIVERY_LABELS[customer.deliveryMethod],
       address: customer.address?.trim() || undefined,
+    });
+  }
+
+  // Копія кожного замовлення власниці на пошту (реквізити з site_settings,
+  // ті самі, що редагуються в адмінці на вкладці "Реквізити") — незалежно
+  // від того, чи лишив покупець свій email.
+  const { data: ownerSettings } = await supabase.from('site_settings').select('email').eq('id', 1).single();
+  if (ownerSettings?.email) {
+    await sendOwnerNotificationEmail({
+      to: ownerSettings.email,
+      customerName: customer.name.trim(),
+      customerPhone: customer.phone.trim(),
+      customerEmail: customer.email?.trim() || undefined,
+      orderNumber: order.order_number,
+      items: orderItems.map((i) => ({
+        name: i.product_name_ua,
+        quantity: i.quantity,
+        lineTotal: i.unit_price * i.quantity,
+      })),
+      total,
+      deliveryLabel: DELIVERY_LABELS[customer.deliveryMethod],
+      city: customer.city?.trim() || undefined,
+      address: customer.address?.trim() || undefined,
+      comment: customer.comment?.trim() || undefined,
     });
   }
 
