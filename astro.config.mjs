@@ -5,5 +5,5 @@ import { defineConfig } from 'astro/config';
 // service_role/секретів (Telegram-бот), живе окремо в netlify/functions.
 export default defineConfig({
   output: 'static',
-  site: 'https://aroma-anna.netlify.app', // заміниш на реальний домен, коли буде
+  site: 'https://aromaanna.com',
 });

@@ -35,4 +35,4 @@ Disallow: /ru/account
 Disallow: /checkout
 Disallow: /ru/checkout
 
-Sitemap: https://aroma-anna.netlify.app/sitemap.xml
+Sitemap: https://aromaanna.com/sitemap.xml
