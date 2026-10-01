@@ -36,6 +36,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <div class="admin-panel" id="panel-stats" hidden>
         <div class="panel-header">
           <h2>Статистика</h2>
+          <button type="button" id="reset-stats-btn" class="btn btn-outline">Скинути статистику</button>
         </div>
         <div class="stats-grid" id="stats-grid">
           <div class="stat-card">
@@ -60,9 +61,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           </div>
           <div class="stat-card">
             <span class="stat-value" id="stat-revenue-30d">—</span>
-            <span class="stat-label">Дохід за 30 днів</span>
+            <span class="stat-label">Дохід за 30 днів (відправлені замовлення)</span>
           </div>
         </div>
+        <p id="stats-reset-note" class="stats-note" hidden></p>
         <p id="stats-note" class="stats-note" hidden>
           Кількість користувачів не вдалося порахувати — можливо, потрібно додати колонку created_at або дозвіл на
           читання в таблиці profiles.
@@ -799,7 +801,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 </style>
 
 <script>
-  import { requireAdmin, listAllProducts, saveProduct, deleteProduct, listAllCategories, saveCategory, deleteCategory, listAllBlogPosts, saveBlogPost, deleteBlogPost, uploadProductImage, listAllOrders, updateOrderStatus, fetchSiteSettingsAdmin, saveSiteSettings, listAllTestimonials, saveTestimonial, deleteTestimonial, fetchAdminStats } from '@/lib/admin';
+  import { requireAdmin, listAllProducts, saveProduct, deleteProduct, listAllCategories, saveCategory, deleteCategory, listAllBlogPosts, saveBlogPost, deleteBlogPost, uploadProductImage, listAllOrders, updateOrderStatus, fetchSiteSettingsAdmin, saveSiteSettings, listAllTestimonials, saveTestimonial, deleteTestimonial, fetchAdminStats, resetAdminStats } from '@/lib/admin';
   import type { ProductRow, CategoryRow } from '@/lib/catalog';
   import type { BlogPostRow } from '@/lib/blog';
   import type { TestimonialRow } from '@/lib/testimonials';
@@ -991,7 +993,32 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     setText('stat-revenue-30d', `${stats.revenue30d.toLocaleString('uk-UA')} грн`);
 
     document.getElementById('stats-note')?.toggleAttribute('hidden', usersKnown);
+
+    const resetNoteEl = document.getElementById('stats-reset-note');
+    if (resetNoteEl) {
+      if (stats.statsResetAt) {
+        const resetDate = new Date(stats.statsResetAt).toLocaleString('uk-UA');
+        resetNoteEl.textContent = `Дані рахуються з моменту останнього скидання: ${resetDate}`;
+        resetNoteEl.removeAttribute('hidden');
+      } else {
+        resetNoteEl.setAttribute('hidden', 'true');
+      }
+    }
   }
+
+  document.getElementById('reset-stats-btn')?.addEventListener('click', async () => {
+    if (!confirm('Скинути статистику замовлень і доходу? Самі замовлення НЕ видаляться — просто перестануть враховуватись у підрахунках до цього моменту.')) return;
+    const btn = document.getElementById('reset-stats-btn') as HTMLButtonElement | null;
+    if (btn) btn.disabled = true;
+    try {
+      await resetAdminStats();
+      await reloadStats();
+    } catch {
+      alert('Не вдалося скинути статистику. Спробуй ще раз.');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  });
 
   async function reloadOrders() {
     if (!ordersTbody) return;

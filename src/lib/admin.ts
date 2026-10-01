@@ -36,6 +36,7 @@ export interface AdminStats {
   totalOrders: number;
   newOrders7d: number;
   revenue30d: number;
+  statsResetAt: string | null;
 }
 
 /**
@@ -43,20 +44,36 @@ export interface AdminStats {
  * рух на сайті (реєстрації, замовлення), без потреби лізти в Supabase.
  * totalUsers/newUsersXd можуть бути null, якщо в profiles немає колонки
  * created_at — тоді просто не показуємо ці картки, а не ламаємо сторінку.
+ *
+ * Дохід рахується лише по замовленнях зі статусом "shipped" (відправлено) або
+ * "completed" (виконано) — тобто по тих, що реально відправлені клієнту, а не
+ * по всіх оформлених. Якщо в site_settings.stats_reset_at стоїть дата (кнопка
+ * "Скинути статистику" в адмінці), усі підрахунки враховують лише замовлення
+ * ПІСЛЯ цієї дати — це дозволяє почистити дані від тестових замовлень, не
+ * видаляючи самі замовлення з бази.
  */
 export async function fetchAdminStats(): Promise<AdminStats> {
   const now = Date.now();
   const d7 = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
   const d30 = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
 
+  const { data: settingsRow } = await supabase.from('site_settings').select('stats_reset_at').eq('id', 1).single();
+  const resetAt = (settingsRow as { stats_reset_at?: string | null } | null)?.stats_reset_at ?? null;
+
+  const cutoff7 = resetAt && resetAt > d7 ? resetAt : d7;
+  const cutoff30 = resetAt && resetAt > d30 ? resetAt : d30;
+
+  let totalOrdersQuery = supabase.from('orders').select('*', { count: 'exact', head: true });
+  if (resetAt) totalOrdersQuery = totalOrdersQuery.gte('created_at', resetAt);
+
   const [totalUsersRes, newUsers7dRes, newUsers30dRes, totalOrdersRes, newOrders7dRes, revenueRes] =
     await Promise.all([
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
       supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', d7),
       supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', d30),
-      supabase.from('orders').select('*', { count: 'exact', head: true }),
-      supabase.from('orders').select('*', { count: 'exact', head: true }).gte('created_at', d7),
-      supabase.from('orders').select('total, status').gte('created_at', d30).neq('status', 'cancelled'),
+      totalOrdersQuery,
+      supabase.from('orders').select('*', { count: 'exact', head: true }).gte('created_at', cutoff7),
+      supabase.from('orders').select('total, status').gte('created_at', cutoff30).in('status', ['shipped', 'completed']),
     ]);
 
   const revenue30d = (revenueRes.data ?? []).reduce((sum, o) => sum + Number(o.total), 0);
@@ -68,7 +85,21 @@ export async function fetchAdminStats(): Promise<AdminStats> {
     totalOrders: totalOrdersRes.count ?? 0,
     newOrders7d: newOrders7dRes.count ?? 0,
     revenue30d,
+    statsResetAt: resetAt,
   };
+}
+
+/**
+ * "Скинути статистику" — записує поточний момент у site_settings.stats_reset_at.
+ * Самі замовлення в базі НЕ видаляються, просто fetchAdminStats() починає
+ * рахувати все (кількість замовлень, дохід) лише починаючи з цієї дати.
+ */
+export async function resetAdminStats(): Promise<void> {
+  const { error } = await supabase
+    .from('site_settings')
+    .update({ stats_reset_at: new Date().toISOString() })
+    .eq('id', 1);
+  if (error) throw error;
 }
 
 // ---------- Фото товарів ----------

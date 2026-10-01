@@ -80,7 +80,17 @@ const c = dict.checkout;
           <textarea name="comment" rows="3"></textarea>
         </label>
 
-        <p id="checkout-error" class="checkout-error" hidden data-generic-text={c.errorGeneric}></p>
+        <p
+          id="checkout-error"
+          class="checkout-error"
+          hidden
+          data-generic-text={c.errorGeneric}
+          data-missing-name={c.errorMissingName}
+          data-missing-phone={c.errorMissingPhone}
+          data-missing-city={c.errorMissingCity}
+          data-missing-branch={c.errorMissingBranch}
+          data-missing-address={c.errorMissingAddress}
+        ></p>
 
         <button type="submit" id="checkout-submit" class="btn submit-btn">{c.submit}</button>
       </form>
@@ -237,6 +247,11 @@ const c = dict.checkout;
     font-size: 14px;
   }
 
+  .checkout-form :global(.field-invalid) {
+    border-color: var(--color-sale) !important;
+    background: #fff6f6;
+  }
+
   @media (max-width: 780px) {
     .checkout-grid {
       grid-template-columns: 1fr;
@@ -268,6 +283,12 @@ const c = dict.checkout;
   const addressField = document.getElementById('address-field');
   const postalField = document.getElementById('postal-field');
 
+  const nameInput = form?.elements.namedItem('name') as HTMLInputElement | null;
+  const phoneInput = form?.elements.namedItem('phone') as HTMLInputElement | null;
+  const cityInput = form?.elements.namedItem('city') as HTMLInputElement | null;
+  const branchInput = form?.elements.namedItem('branch') as HTMLInputElement | null;
+  const addressInput = form?.elements.namedItem('address') as HTMLInputElement | null;
+
   const successBodyTemplate = successBodyEl?.dataset.template || '';
 
   function toggleAddressField() {
@@ -276,6 +297,54 @@ const c = dict.checkout;
     if (branchField) branchField.style.display = method === 'nova_poshta' ? 'flex' : 'none';
     if (addressField) addressField.style.display = method === 'ukrposhta' ? 'flex' : 'none';
     if (postalField) postalField.style.display = method === 'ukrposhta' ? 'flex' : 'none';
+  }
+
+  function clearFieldError(input: HTMLElement | null | undefined) {
+    input?.classList.remove('field-invalid');
+  }
+
+  function showFieldError(input: HTMLElement | null | undefined, messageKey: string) {
+    clearAllFieldErrors();
+    input?.classList.add('field-invalid');
+    if (errorEl) {
+      errorEl.textContent = errorEl.dataset[messageKey] || errorEl.dataset.genericText || 'Error';
+      errorEl.removeAttribute('hidden');
+    }
+    input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    (input as HTMLInputElement | null)?.focus?.();
+  }
+
+  function clearAllFieldErrors() {
+    [nameInput, phoneInput, cityInput, branchInput, addressInput].forEach(clearFieldError);
+  }
+
+  [nameInput, phoneInput, cityInput, branchInput, addressInput].forEach((input) => {
+    input?.addEventListener('input', () => clearFieldError(input));
+  });
+
+  function validateForm(): boolean {
+    if (!nameInput?.value.trim()) {
+      showFieldError(nameInput, 'missingName');
+      return false;
+    }
+    if (!phoneInput?.value.trim()) {
+      showFieldError(phoneInput, 'missingPhone');
+      return false;
+    }
+    const method = deliverySelect?.value || 'nova_poshta';
+    if (method !== 'pickup' && !cityInput?.value.trim()) {
+      showFieldError(cityInput, 'missingCity');
+      return false;
+    }
+    if (method === 'nova_poshta' && !branchInput?.value.trim()) {
+      showFieldError(branchInput, 'missingBranch');
+      return false;
+    }
+    if (method === 'ukrposhta' && !addressInput?.value.trim()) {
+      showFieldError(addressInput, 'missingAddress');
+      return false;
+    }
+    return true;
   }
 
   await cartReady();
@@ -301,6 +370,12 @@ const c = dict.checkout;
       e.preventDefault();
       if (!form) return;
       errorEl?.setAttribute('hidden', 'true');
+      clearAllFieldErrors();
+
+      if (!validateForm()) {
+        return;
+      }
+
       if (submitBtn) submitBtn.disabled = true;
 
       const formData = new FormData(form);
@@ -361,7 +436,12 @@ const c = dict.checkout;
             }
           }
         } else {
-          if (errorEl) {
+          if (result.error === 'missing_customer_info') {
+            showFieldError(!nameInput?.value.trim() ? nameInput : phoneInput, !nameInput?.value.trim() ? 'missingName' : 'missingPhone');
+          } else if (result.error === 'missing_address') {
+            const method = deliverySelect?.value || 'nova_poshta';
+            showFieldError(method === 'ukrposhta' ? addressInput : branchInput, method === 'ukrposhta' ? 'missingAddress' : 'missingBranch');
+          } else if (errorEl) {
             errorEl.textContent = errorEl.dataset.genericText || 'Error';
             errorEl.removeAttribute('hidden');
           }
